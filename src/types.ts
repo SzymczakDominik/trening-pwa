@@ -1,6 +1,6 @@
 export type Muscle =
   | 'klatka' | 'plecy' | 'barki' | 'biceps' | 'triceps' | 'przedramiona'
-  | 'czworogłowe' | 'dwugłowe' | 'pośladki' | 'łydki' | 'brzuch';
+  | 'czworogłowe' | 'dwugłowe' | 'pośladki' | 'łydki' | 'przywodziciele' | 'brzuch';
 
 export type Equipment = 'sztanga' | 'hantle' | 'wyciąg' | 'maszyna' | 'masa ciała' | 'inne';
 

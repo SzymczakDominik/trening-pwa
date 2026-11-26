@@ -82,12 +82,19 @@ export const EXERCISES: Exercise[] = [
   e('pallof', 'Pallof press (antyrotacja)', ['brzuch'], 'wyciąg', false, [], 1.25),
   e('dead_bug', 'Dead bug', ['brzuch'], 'masa ciała', false, [], 0, true),
   e('farmer', 'Spacer farmera (metry)', ['przedramiona', 'brzuch'], 'hantle', true, ['plecy'], 2),
+  e('kb_swing', 'Swing kettlebell (odważnik)', ['pośladki', 'dwugłowe'], 'inne', true, ['plecy'], 4),
+  e('kickback_tri', 'Prostowanie ramienia w opadzie (kick back)', ['triceps'], 'hantle', false, [], 1),
+  e('glute_kickback', 'Odwodzenie nogi w tył na wyciągu (kick back)', ['pośladki'], 'wyciąg', false, ['dwugłowe'], 1.25),
+  e('adductor', 'Przywodzenie nóg na maszynie', ['przywodziciele'], 'maszyna', false, [], 2.5),
+  e('crunch', 'Brzuszki (crunch)', ['brzuch'], 'masa ciała', false, [], 0, true),
+  e('side_bend', 'Skłony boczne z hantlem (skosy brzucha)', ['brzuch'], 'hantle', false, [], 2),
+  e('russian_twist', 'Skręty tułowia – russian twist (skosy)', ['brzuch'], 'masa ciała', false, [], 0, true),
   e('shrug', 'Szrugsy z hantlami', ['plecy'], 'hantle', false, ['przedramiona'], 2),
 ];
 
 export const MUSCLES: Muscle[] = [
   'klatka', 'plecy', 'barki', 'biceps', 'triceps', 'przedramiona',
-  'czworogłowe', 'dwugłowe', 'pośladki', 'łydki', 'brzuch',
+  'czworogłowe', 'dwugłowe', 'pośladki', 'przywodziciele', 'łydki', 'brzuch',
 ];
 
 let extra: Exercise[] = [];
@@ -103,4 +110,4 @@ export function getExercise(id: string): Exercise {
 }
 
 /** ćwiczenia z ilustracją w public/img/ex/<id>-0.webp i -1.webp */
-export const IMG_IDS = new Set<string>(["ab_wheel", "arnold", "back_ext", "band_chinup", "bb_curl", "bench", "bss", "cable_crunch", "cable_curl", "cable_fly", "cable_lateral", "cable_row", "calf_seated", "calf_single", "calf_stand", "captain", "chest_row", "chinup", "close_bench", "db_bench", "db_curl", "db_fly", "db_incline", "db_ohp", "db_rdl", "db_row", "db_skull", "dead_bug", "deadlift", "dips", "face_pull", "farmer", "front_squat", "glute_bridge", "goblet", "hack", "hammer", "hanging_raise", "hip_thrust", "incline_bench", "incline_curl", "lateral", "leg_curl", "leg_ext", "leg_press", "lunge", "machine_press", "oh_ext", "ohp", "pallof", "plank", "preacher", "pulldown", "pulldown_close", "pullup", "pushdown", "pushup", "rdl", "rear_delt", "row", "row_uh", "seated_curl", "shrug", "side_plank", "skull", "squat", "step_up", "straight_pulldown"]);
+export const IMG_IDS = new Set<string>(["kb_swing", "kickback_tri", "glute_kickback", "adductor", "crunch", "side_bend", "russian_twist", "ab_wheel", "arnold", "back_ext", "band_chinup", "bb_curl", "bench", "bss", "cable_crunch", "cable_curl", "cable_fly", "cable_lateral", "cable_row", "calf_seated", "calf_single", "calf_stand", "captain", "chest_row", "chinup", "close_bench", "db_bench", "db_curl", "db_fly", "db_incline", "db_ohp", "db_rdl", "db_row", "db_skull", "dead_bug", "deadlift", "dips", "face_pull", "farmer", "front_squat", "glute_bridge", "goblet", "hack", "hammer", "hanging_raise", "hip_thrust", "incline_bench", "incline_curl", "lateral", "leg_curl", "leg_ext", "leg_press", "lunge", "machine_press", "oh_ext", "ohp", "pallof", "plank", "preacher", "pulldown", "pulldown_close", "pullup", "pushdown", "pushup", "rdl", "rear_delt", "row", "row_uh", "seated_curl", "shrug", "side_plank", "skull", "squat", "step_up", "straight_pulldown"]);
