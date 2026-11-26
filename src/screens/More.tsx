@@ -24,6 +24,7 @@ export function MoreScreen({ sync }: { sync: SyncInfo }) {
       <h1 className="title">Więcej</h1>
       <div className="mt16">
         <Item icon="user" t="Konto i synchronizacja" d={sync.auth?.user ? `${sync.auth.user.email} · ${syncLabel[sync.state]}` : 'Zaloguj się, by mieć kopię w chmurze'} onClick={() => push({ name: 'account' })} />
+        <Item icon="activity" t="Strava" d="Wysyłaj treningi i pobieraj biegi oraz rowery" onClick={() => push({ name: 'strava' })} />
         <Item icon="tool" t="Kalkulatory" d="1RM, BMI, FFMI, tkanka tłuszczowa, kalorie, białko, woda" onClick={() => push({ name: 'tools' })} />
         <Item icon="info" t="Jak działa progresja" d="RIR, podwójna progresja, bloki i odciążenie" onClick={() => push({ name: 'method' })} />
         <Item icon="dumbbell" t="Biblioteka planów" d="Zmień lub podejrzyj plany" onClick={() => push({ name: 'library' })} />
