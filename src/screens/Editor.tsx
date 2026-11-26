@@ -103,17 +103,16 @@ export function WorkoutEditor({ blockIndex, workoutId }: { blockIndex: number; w
         <input className="input" value={w.name} onChange={(e) => updateWorkout(blockIndex, workoutId, (x) => { x.name = e.target.value; })} />
       </label>
       <div className="small muted mt12">{program.blocks[blockIndex].name} · zmiany dotyczą tylko tego bloku</div>
-      <div className="xs muted center mt12">Przytrzymaj uchwyt ⋮⋮ i przeciągnij, aby zmienić kolejność</div>
+      <div className="xs muted center mt12">Przytrzymaj ćwiczenie i przeciągnij, aby zmienić kolejność</div>
       <div className="mt8">
         <ReorderList items={w.exercises} getKey={(e) => e.uid} rowClass={() => 'exrow-wrap'}
           onReorder={(next) => updateWorkout(blockIndex, workoutId, (x) => { const m = new Map(x.exercises.map((y) => [y.uid, y])); x.exercises = next.map((y) => m.get(y.uid)!); })}>
-          {(e, i, handle) => {
+          {(e, i) => {
             const ex = getExercise(e.exId);
             return (
               <div className={`card ${e.superset ? 'ss' : ''}`} style={{ padding: 12, marginBottom: 12, marginTop: 0 }}>
                 <div className="row">
-                  {handle}
-                  <button className="row grow" style={{ textAlign: 'left' }} onClick={() => setEdit(e.uid)}>
+                    <button className="row grow" style={{ textAlign: 'left' }} onClick={() => setEdit(e.uid)}>
                     <ExImg id={e.exId} size="sq" />
                     <div className="grow">
                       <div className="bold" style={{ lineHeight: 1.25 }}>{ex.name}</div>

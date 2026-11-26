@@ -338,14 +338,13 @@ export function Workout() {
 
       {/* lista ćwiczeń */}
       <Sheet open={overview} onClose={() => setOverview(false)} title="Plan treningu">
-        <div className="xs muted center" style={{ marginBottom: 4 }}>Przytrzymaj uchwyt ⋮⋮ i przeciągnij, aby zmienić kolejność</div>
+        <div className="xs muted center" style={{ marginBottom: 4 }}>Przytrzymaj ćwiczenie i przeciągnij, aby zmienić kolejność</div>
         <ReorderList items={entries} getKey={(e) => e.uid} rowClass={(e) => `item ${e.superset ? 'ss' : ''}`}
           onReorder={(next) => update((s) => { const m = new Map(s.entries.map((x) => [x.uid, x])); s.entries = next.map((x) => m.get(x.uid)!); })}>
-          {(e, i, handle) => {
+          {(e, i) => {
             const ee = getExercise(e.exId); const d = e.sets.filter((s) => s.done).length;
             return (
               <>
-                {handle}
                 <button className="row grow" style={{ textAlign: 'left' }} onClick={() => jump(e.uid)}>
                   <ExImg id={e.exId} size="sq" />
                   <div className="grow">

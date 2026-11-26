@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, Reorder, useDragControls, type DragControls } from 'motion/react';
+import { AnimatePresence, motion, Reorder, useDragControls } from 'motion/react';
 import {
   ArrowLeftRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChartNoAxesColumn, ClipboardList,
-  Cloud, Dumbbell, GripVertical, Ellipsis, Flame, House, Info, List, Minus, Pencil, Play, Plus, Search, Share, SkipForward, Timer, Trash2, Trophy, User, Wrench, X,
+  Cloud, Dumbbell,  Ellipsis, Flame, House, Info, List, Minus, Pencil, Play, Plus, Search, Share, SkipForward, Timer, Trash2, Trophy, User, Wrench, X,
   PersonStanding,
 } from 'lucide-react';
 
@@ -10,7 +10,7 @@ const ICONS: Record<string, typeof Check> = {
   home: House, plan: ClipboardList, cal: CalendarDays, chart: ChartNoAxesColumn, more: Ellipsis, back: ChevronLeft, close: X,
   check: Check, plus: Plus, minus: Minus, up: ChevronUp, down: ChevronDown, right: ChevronRight, trash: Trash2, edit: Pencil,
   play: Play, timer: Timer, flame: Flame, trophy: Trophy, user: User, tool: Wrench, cloud: Cloud, swap: ArrowLeftRight, info: Info,
-  search: Search, body: PersonStanding, share: Share, dumbbell: Dumbbell, skip: SkipForward, list: List, grip: GripVertical,
+  search: Search, body: PersonStanding, share: Share, dumbbell: Dumbbell, skip: SkipForward, list: List,
 };
 
 export function Icon({ name, size = 22, stroke = 2, fill }: { name: string; size?: number; stroke?: number; fill?: boolean }) {
@@ -45,6 +45,7 @@ function SheetBody({ onClose, title, children }: { onClose: () => void; title?: 
       dragging = false; dy = 0; y0 = e.touches[0].clientY;
     };
     const move = (e: TouchEvent) => {
+      if (document.body.dataset.reorder) { armed = false; dragging = false; return; }
       if (!armed) return;
       dy = e.touches[0].clientY - y0;
       if (!dragging && dy > 10 && sh.scrollTop <= 0) { dragging = true; w.style.transition = 'none'; }
@@ -171,23 +172,41 @@ export const kgFmt = (n: number) => (Math.round(n * 10) / 10).toLocaleString('pl
 export const bigFmt = (n: number) => n >= 10000 ? `${(n / 1000).toLocaleString('pl-PL', { maximumFractionDigits: 1 })} t` : `${Math.round(n).toLocaleString('pl-PL')} kg`;
 
 
-/** Uchwyt do przeciągania wiersza (dotknij i przytrzymaj, potem przesuń). */
-export function DragHandle({ controls }: { controls: DragControls }) {
-  return (
-    <span className="draghandle" aria-label="Przeciągnij, aby zmienić kolejność" role="button"
-      onPointerDown={(e) => { e.preventDefault(); controls.start(e); }}>
-      <Icon name="grip" size={22} />
-    </span>
-  );
-}
-
 function ReorderRow<T>({ item, className, children }: { item: T; className?: string; children: (handle: ReactNode) => ReactNode }) {
   const controls = useDragControls();
+  const ref = useRef<HTMLElement | null>(null);
+  const st = useRef<{ t: number; x: number; y: number; active: boolean }>({ t: 0, x: 0, y: 0, active: false });
+  // długie przytrzymanie wiersza włącza przeciąganie (zwykły ruch palcem nadal przewija listę)
+  const onPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('input, select, textarea')) return;
+    const s0 = st.current; s0.x = e.clientX; s0.y = e.clientY; s0.active = false;
+    const ev = e.nativeEvent;
+    window.clearTimeout(s0.t);
+    s0.t = window.setTimeout(() => {
+      s0.active = true; document.body.dataset.reorder = '1'; controls.start(ev);
+      try { navigator.vibrate?.(12); } catch { /* brak */ }
+    }, e.pointerType === 'mouse' ? 0 : 280);
+  };
+  const cancel = () => window.clearTimeout(st.current.t);
+  const onPointerMove = (e: React.PointerEvent) => {
+    const s0 = st.current;
+    if (!s0.active && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 8) cancel();
+  };
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const block = (e: TouchEvent) => { if (st.current.active && e.cancelable) e.preventDefault(); };
+    const noClick = (e: Event) => { if (st.current.active) { e.stopPropagation(); e.preventDefault(); st.current.active = false; } };
+    el.addEventListener('touchmove', block, { passive: false });
+    el.addEventListener('click', noClick, true);
+    return () => { el.removeEventListener('touchmove', block); el.removeEventListener('click', noClick, true); window.clearTimeout(st.current.t); };
+  }, []);
   return (
-    <Reorder.Item value={item} dragListener={false} dragControls={controls} className={className}
-      style={{ position: 'relative' }} whileDrag={{ scale: 1.02, boxShadow: '0 12px 30px rgba(0,0,0,.45)', zIndex: 5, background: 'var(--surface2)' }}
+    <Reorder.Item value={item} dragListener={false} dragControls={controls} className={className} ref={ref as never}
+      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => { cancel(); window.setTimeout(() => { st.current.active = false; delete document.body.dataset.reorder; }, 50); }} onPointerCancel={() => { cancel(); delete document.body.dataset.reorder; }}
+      style={{ position: 'relative', touchAction: 'pan-y', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' } as never}
+      whileDrag={{ scale: 1.02, boxShadow: '0 12px 30px rgba(0,0,0,.45)', zIndex: 5, background: 'var(--surface2)' }}
       transition={{ type: 'spring', damping: 30, stiffness: 500 }}>
-      {children(<DragHandle controls={controls} />)}
+      {children(null)}
     </Reorder.Item>
   );
 }
