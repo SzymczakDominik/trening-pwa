@@ -3,7 +3,7 @@ import { AnimatePresence, motion, Reorder, useDragControls } from 'motion/react'
 import {
   ArrowLeftRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChartNoAxesColumn, ClipboardList,
   Cloud, Dumbbell,  Ellipsis, Flame, House, Info, List, Minus, Pencil, Play, Plus, Search, Share, SkipForward, Timer, Trash2, Trophy, User, Wrench, X,
-  PersonStanding,
+  PersonStanding, Utensils, ScanBarcode, Droplet, Scale, Bookmark, Copy, Zap, Target,
 } from 'lucide-react';
 
 const ICONS: Record<string, typeof Check> = {
@@ -11,6 +11,7 @@ const ICONS: Record<string, typeof Check> = {
   check: Check, plus: Plus, minus: Minus, up: ChevronUp, down: ChevronDown, right: ChevronRight, trash: Trash2, edit: Pencil,
   play: Play, timer: Timer, flame: Flame, trophy: Trophy, user: User, tool: Wrench, cloud: Cloud, swap: ArrowLeftRight, info: Info,
   search: Search, body: PersonStanding, share: Share, dumbbell: Dumbbell, skip: SkipForward, list: List,
+  food: Utensils, scan: ScanBarcode, drop: Droplet, scale: Scale, bookmark: Bookmark, copy: Copy, zap: Zap, target: Target,
 };
 
 export function Icon({ name, size = 22, stroke = 2, fill }: { name: string; size?: number; stroke?: number; fill?: boolean }) {

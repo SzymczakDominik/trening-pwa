@@ -138,6 +138,67 @@ export interface Profile {
   sound: boolean;
 }
 
+/** Wartości odżywcze na 100 g (lub 100 ml). */
+export interface Per100 { kcal: number; p: number; c: number; f: number }
+
+export interface Food extends Per100 {
+  id: string;
+  name: string;
+  brand?: string;
+  cat?: string;
+  /** typowa porcja: etykieta + gramy */
+  portion?: { label: string; g: number };
+  barcode?: string;
+  custom?: boolean;
+  updatedAt?: number;
+  deleted?: boolean;
+}
+
+export type MealKey = 'sniadanie' | 'obiad' | 'kolacja' | 'przekaski';
+
+/** Wpis w dzienniku posiłków (zapisuje kopię wartości, więc działa bez bazy). */
+export interface FoodEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  meal: MealKey;
+  name: string;
+  brand?: string;
+  grams: number;
+  n: Per100;
+  foodId?: string;
+  updatedAt: number;
+  deleted?: boolean;
+}
+
+export interface SavedMeal {
+  id: string;
+  name: string;
+  items: { name: string; brand?: string; grams: number; n: Per100; foodId?: string }[];
+  updatedAt: number;
+  deleted?: boolean;
+}
+
+export interface WaterLog { id: string; date: string; ml: number; updatedAt: number }
+
+export type Activity = 1.2 | 1.375 | 1.55 | 1.725 | 1.9;
+export type DietMode = 'red' | 'keep' | 'mass';
+
+export interface NutritionPlan {
+  mode: DietMode;
+  activity: Activity;
+  /** ręczne nadpisania celów */
+  kcal?: number; p?: number; c?: number; f?: number; waterMl?: number;
+  updatedAt: number;
+}
+
+export interface FoodData {
+  plan?: NutritionPlan;
+  entries: FoodEntry[];
+  customFoods: Food[];
+  meals: SavedMeal[];
+  water: WaterLog[];
+}
+
 export interface AppData {
   version: 1;
   profile: Profile;
@@ -145,5 +206,6 @@ export interface AppData {
   sessions: Session[];
   body: BodyLog[];
   customExercises: Exercise[];
+  food?: FoodData;
   updatedAt: number;
 }
