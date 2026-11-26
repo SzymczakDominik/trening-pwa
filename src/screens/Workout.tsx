@@ -209,6 +209,7 @@ export function Workout() {
               <div className="bold ellipsis" style={{ fontFamily: 'var(--display)', fontSize: 17 }}>{active.workoutName}</div>
               <div className="xs muted num">{fmtClock(elapsed / 1000)} · {doneSets}/{totalSets} serii · {bigFmt(sessionVolume(active))}</div>
             </div>
+            <button className="endbtn" onClick={() => setEnding(true)}>Zakończ</button>
             <button className="iconbtn" onClick={() => setOverview(true)} aria-label="Lista ćwiczeń"><Icon name="list" /></button>
           </div>
           <div className="segs">
@@ -359,6 +360,7 @@ export function Workout() {
           }}
         </ReorderList>
         <button className="btn block mt12" onClick={() => { setOverview(false); setPicker({}); }}><Icon name="plus" size={18} /> Dodaj ćwiczenie</button>
+        <button className="btn primary block mt12" onClick={() => { setOverview(false); setEnding(true); }}><Icon name="check" size={18} stroke={3} /> Zakończ trening i zapisz</button>
         <button className="btn danger block mt12" onClick={() => { if (confirm('Odrzucić ten trening? Nic nie zostanie zapisane.')) { discard(); setOverview(false); pop(); } }}>Odrzuć trening</button>
       </Sheet>
 
@@ -429,7 +431,7 @@ function FinishSheet({ onClose, onSave, allDone }: { onClose: () => void; onSave
           {prs.map((p) => <div key={p.exId} className="small mt8 center">{getExercise(p.exId).name}: <b className="accent">{p.type === 'kg' ? `${kgFmt(p.value)} kg` : `e1RM ${kgFmt(p.value)} kg`}</b> <span className="muted">(było {kgFmt(p.prev)})</span></div>)}
         </div>
       )}
-      {undone > 0 && <div className="xs muted mt12 center">Niezaznaczone serie ({undone}) nie zostaną zapisane.</div>}
+      {undone > 0 && <div className="card2 small mt12 center">{(() => { const n = sessionSets(active); const f = n === 1 ? 'wykonaną serię' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 > 20) ? 'wykonane serie' : 'wykonanych serii'; return `Zapiszemy ${n} ${f}. Niezrobione (${undone}) zostaną pominięte.`; })()}</div>}
       <div className="small muted mt16 center">Jak się czułeś?</div>
       <div className="grid3 mt8" style={{ gridTemplateColumns: 'repeat(5, minmax(0,1fr))' }}>{['😫', '😕', '😐', '🙂', '💪'].map((e, i) => <button key={i} className={`chip ${feel === i + 1 ? 'on' : ''}`} style={{ fontSize: 22, height: 48, borderRadius: 14 }} onClick={() => setFeel(i + 1)}>{e}</button>)}</div>
       <textarea className="input left mt12" placeholder="Notatka (opcjonalnie)" value={note} onChange={(e) => setNote(e.target.value)} />
