@@ -291,11 +291,15 @@ export function Workout() {
 
               <div>
                 <div className="xs muted bold center" style={{ letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 8 }}>Ile powtórzeń zostało w zapasie (RIR)</div>
+                <div className="xs muted center" style={{ marginTop: -4, marginBottom: 8 }}>0 = nie dałbym rady więcej · 4+ = było lekko</div>
                 <div className="rirrow">
                   {[0, 1, 2, 3, 4].map((r) => <button key={r} className={curSet.rir === r ? 'on' : ''} onClick={() => setVal({ rir: curSet.rir === r ? undefined : r })}>{r === 4 ? '4+' : r}</button>)}
                 </div>
               </div>
 
+              <div>
+              <div className="xs muted bold center" style={{ letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 4 }}>Serie w tym ćwiczeniu</div>
+              <div className="xs muted center" style={{ marginBottom: 8 }}>Numer = kolejna seria · ✓ zrobiona · zielona ramka = ta, którą teraz wpisujesz · + dodaje serię</div>
               <div className="pills">
                 {cur.sets.map((s, i) => (
                   <button key={i} className={`pill-set ${s.done ? 'done' : ''} ${i === setIdx ? 'cur' : ''}`} onClick={() => setSelSet(i)}>
@@ -303,6 +307,7 @@ export function Workout() {
                   </button>
                 ))}
                 <button className="pill-set" aria-label="Dodaj serię" onClick={() => { update((s) => { const e = s.entries.find((x) => x.uid === cur.uid)!; const l = e.sets[e.sets.length - 1]; e.sets.push({ kg: l?.kg ?? 0, reps: l?.reps ?? 8, rir: l?.rir, done: false }); }); setSelSet(cur.sets.length); }}><Icon name="plus" size={18} /></button>
+              </div>
               </div>
 
               <div className="grid2">
