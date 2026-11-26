@@ -5,7 +5,7 @@ import { useStore, liveSessions } from '../lib/store';
 import { useNav } from '../nav';
 import { getExercise } from '../data/exercises';
 import { findPRs, fmtClock, fmtDuration, historyFor, sessionSets, sessionVolume, suggest, uid, workSets } from '../lib/calc';
-import { Icon, NumInput, Ring, Sheet, bigFmt, kgFmt, toast } from '../components/ui';
+import { Icon, NumInput, Ring, ReorderList, Sheet, bigFmt, kgFmt, toast } from '../components/ui';
 import { ExImg } from '../components/ExImg';
 import { ExercisePicker } from './Editor';
 import type { EntryLog, Session } from '../types';
@@ -338,11 +338,14 @@ export function Workout() {
 
       {/* lista ćwiczeń */}
       <Sheet open={overview} onClose={() => setOverview(false)} title="Plan treningu">
-        <div>
-          {entries.map((e, i) => {
+        <div className="xs muted center" style={{ marginBottom: 4 }}>Przytrzymaj uchwyt ⋮⋮ i przeciągnij, aby zmienić kolejność</div>
+        <ReorderList items={entries} getKey={(e) => e.uid} rowClass={(e) => `item ${e.superset ? 'ss' : ''}`}
+          onReorder={(next) => update((s) => { const m = new Map(s.entries.map((x) => [x.uid, x])); s.entries = next.map((x) => m.get(x.uid)!); })}>
+          {(e, i, handle) => {
             const ee = getExercise(e.exId); const d = e.sets.filter((s) => s.done).length;
             return (
-              <div key={e.uid} className={`item ${e.superset ? 'ss' : ''}`}>
+              <>
+                {handle}
                 <button className="row grow" style={{ textAlign: 'left' }} onClick={() => jump(e.uid)}>
                   <ExImg id={e.exId} size="sq" />
                   <div className="grow">
@@ -352,10 +355,10 @@ export function Workout() {
                   {d === e.sets.length && e.sets.length > 0 && <span className="accent"><Icon name="check" stroke={3} /></span>}
                 </button>
                 <button className="iconbtn plain" onClick={() => { setOverview(false); setMenu(e.uid); }}><Icon name="more" size={20} stroke={3} /></button>
-              </div>
+              </>
             );
-          })}
-        </div>
+          }}
+        </ReorderList>
         <button className="btn block mt12" onClick={() => { setOverview(false); setPicker({}); }}><Icon name="plus" size={18} /> Dodaj ćwiczenie</button>
         <button className="btn danger block mt12" onClick={() => { if (confirm('Odrzucić ten trening? Nic nie zostanie zapisane.')) { discard(); setOverview(false); pop(); } }}>Odrzuć trening</button>
       </Sheet>

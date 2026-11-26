@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../lib/store';
 import { useNav } from '../nav';
 import { allExercises, getExercise, MUSCLES } from '../data/exercises';
-import { Icon, NumInput, Sheet, Stepper, TopBar, toast } from '../components/ui';
+import { Icon, NumInput, ReorderList, Sheet, Stepper, TopBar, toast } from '../components/ui';
 import { uid } from '../lib/calc';
 import { ExImg } from '../components/ExImg';
 import type { Equipment, Exercise, Muscle, PlannedExercise } from '../types';
@@ -94,7 +94,6 @@ export function WorkoutEditor({ blockIndex, workoutId }: { blockIndex: number; w
   if (!w || !program) return <div className="screen"><TopBar onBack={pop} title="Brak treningu" /></div>;
 
   const upd = (fn: (list: PlannedExercise[]) => void) => updateWorkout(blockIndex, workoutId, (x) => fn(x.exercises));
-  const move = (i: number, d: number) => upd((l) => { const j = i + d; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; });
   const editing = w.exercises.find((e) => e.uid === edit);
 
   return (
@@ -104,29 +103,30 @@ export function WorkoutEditor({ blockIndex, workoutId }: { blockIndex: number; w
         <input className="input" value={w.name} onChange={(e) => updateWorkout(blockIndex, workoutId, (x) => { x.name = e.target.value; })} />
       </label>
       <div className="small muted mt12">{program.blocks[blockIndex].name} · zmiany dotyczą tylko tego bloku</div>
-      <div className="stack mt12">
-        {w.exercises.map((e, i) => {
-          const ex = getExercise(e.exId);
-          return (
-            <div key={e.uid} className={`card ${e.superset ? 'ss' : ''}`} style={{ padding: 12 }}>
-              <div className="row">
-                <div className="stack" style={{ gap: 4 }}>
-                  <button className="iconbtn" style={{ width: 32, height: 28 }} disabled={i === 0} onClick={() => move(i, -1)}><Icon name="up" size={16} /></button>
-                  <button className="iconbtn" style={{ width: 32, height: 28 }} disabled={i === w.exercises.length - 1} onClick={() => move(i, 1)}><Icon name="down" size={16} /></button>
+      <div className="xs muted center mt12">Przytrzymaj uchwyt ⋮⋮ i przeciągnij, aby zmienić kolejność</div>
+      <div className="mt8">
+        <ReorderList items={w.exercises} getKey={(e) => e.uid} rowClass={() => 'exrow-wrap'}
+          onReorder={(next) => updateWorkout(blockIndex, workoutId, (x) => { const m = new Map(x.exercises.map((y) => [y.uid, y])); x.exercises = next.map((y) => m.get(y.uid)!); })}>
+          {(e, i, handle) => {
+            const ex = getExercise(e.exId);
+            return (
+              <div className={`card ${e.superset ? 'ss' : ''}`} style={{ padding: 12, marginBottom: 12, marginTop: 0 }}>
+                <div className="row">
+                  {handle}
+                  <button className="row grow" style={{ textAlign: 'left' }} onClick={() => setEdit(e.uid)}>
+                    <ExImg id={e.exId} size="sq" />
+                    <div className="grow">
+                      <div className="bold" style={{ lineHeight: 1.25 }}>{ex.name}</div>
+                      <div className="xs muted" style={{ marginTop: 3 }}>{e.sets} × {e.repMin}–{e.repMax} · RIR {e.rir} · {e.restSec}s{e.kg ? ` · ${e.kg} kg` : ''}{e.superset ? ` · superseria ${e.superset.toUpperCase()}` : ''}</div>
+                    </div>
+                  </button>
+                  <button className="iconbtn plain" onClick={() => setPicker({ swap: e.uid })} aria-label="Zamień"><Icon name="swap" size={18} /></button>
+                  <button className="iconbtn plain danger" onClick={() => upd((l) => { l.splice(i, 1); })} aria-label="Usuń"><Icon name="trash" size={18} /></button>
                 </div>
-                <button className="row grow" style={{ textAlign: 'left' }} onClick={() => setEdit(e.uid)}>
-                  <ExImg id={e.exId} size="sq" />
-                  <div className="grow">
-                  <div className="bold" style={{ lineHeight: 1.25 }}>{ex.name}</div>
-                  <div className="xs muted" style={{ marginTop: 3 }}>{e.sets} × {e.repMin}–{e.repMax} · RIR {e.rir} · {e.restSec}s{e.kg ? ` · ${e.kg} kg` : ''}{e.superset ? ` · superseria ${e.superset.toUpperCase()}` : ''}</div>
-                  </div>
-                </button>
-                <button className="iconbtn plain" onClick={() => setPicker({ swap: e.uid })} aria-label="Zamień"><Icon name="swap" size={18} /></button>
-                <button className="iconbtn plain danger" onClick={() => upd((l) => { l.splice(i, 1); })} aria-label="Usuń"><Icon name="trash" size={18} /></button>
               </div>
-            </div>
-          );
-        })}
+            );
+          }}
+        </ReorderList>
       </div>
       <button className="btn block mt12" onClick={() => setPicker({})}><Icon name="plus" size={18} /> Dodaj ćwiczenie</button>
       <button className="btn ghost block mt8" onClick={() => {

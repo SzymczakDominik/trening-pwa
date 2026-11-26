@@ -1,8 +1,8 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, Reorder, useDragControls, type DragControls } from 'motion/react';
 import {
   ArrowLeftRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChartNoAxesColumn, ClipboardList,
-  Cloud, Dumbbell, Ellipsis, Flame, House, Info, List, Minus, Pencil, Play, Plus, Search, Share, SkipForward, Timer, Trash2, Trophy, User, Wrench, X,
+  Cloud, Dumbbell, GripVertical, Ellipsis, Flame, House, Info, List, Minus, Pencil, Play, Plus, Search, Share, SkipForward, Timer, Trash2, Trophy, User, Wrench, X,
   PersonStanding,
 } from 'lucide-react';
 
@@ -10,7 +10,7 @@ const ICONS: Record<string, typeof Check> = {
   home: House, plan: ClipboardList, cal: CalendarDays, chart: ChartNoAxesColumn, more: Ellipsis, back: ChevronLeft, close: X,
   check: Check, plus: Plus, minus: Minus, up: ChevronUp, down: ChevronDown, right: ChevronRight, trash: Trash2, edit: Pencil,
   play: Play, timer: Timer, flame: Flame, trophy: Trophy, user: User, tool: Wrench, cloud: Cloud, swap: ArrowLeftRight, info: Info,
-  search: Search, body: PersonStanding, share: Share, dumbbell: Dumbbell, skip: SkipForward, list: List,
+  search: Search, body: PersonStanding, share: Share, dumbbell: Dumbbell, skip: SkipForward, list: List, grip: GripVertical,
 };
 
 export function Icon({ name, size = 22, stroke = 2, fill }: { name: string; size?: number; stroke?: number; fill?: boolean }) {
@@ -127,3 +127,39 @@ export function CountUp({ value, format = (n: number) => String(Math.round(n)) }
 
 export const kgFmt = (n: number) => (Math.round(n * 10) / 10).toLocaleString('pl-PL');
 export const bigFmt = (n: number) => n >= 10000 ? `${(n / 1000).toLocaleString('pl-PL', { maximumFractionDigits: 1 })} t` : `${Math.round(n).toLocaleString('pl-PL')} kg`;
+
+
+/** Uchwyt do przeciągania wiersza (dotknij i przytrzymaj, potem przesuń). */
+export function DragHandle({ controls }: { controls: DragControls }) {
+  return (
+    <span className="draghandle" aria-label="Przeciągnij, aby zmienić kolejność" role="button"
+      onPointerDown={(e) => { e.preventDefault(); controls.start(e); }}>
+      <Icon name="grip" size={22} />
+    </span>
+  );
+}
+
+function ReorderRow<T>({ item, className, children }: { item: T; className?: string; children: (handle: ReactNode) => ReactNode }) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item value={item} dragListener={false} dragControls={controls} className={className}
+      style={{ position: 'relative' }} whileDrag={{ scale: 1.02, boxShadow: '0 12px 30px rgba(0,0,0,.45)', zIndex: 5, background: 'var(--surface2)' }}
+      transition={{ type: 'spring', damping: 30, stiffness: 500 }}>
+      {children(<DragHandle controls={controls} />)}
+    </Reorder.Item>
+  );
+}
+
+/** Lista z możliwością zmiany kolejności przez przeciąganie uchwytu. */
+export function ReorderList<T>({ items, getKey, onReorder, rowClass, children }: {
+  items: T[]; getKey: (x: T) => string; onReorder: (next: T[]) => void; rowClass?: (x: T) => string;
+  children: (item: T, index: number, handle: ReactNode) => ReactNode;
+}) {
+  return (
+    <Reorder.Group axis="y" values={items} onReorder={onReorder} as="div" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+      {items.map((it, i) => (
+        <ReorderRow key={getKey(it)} item={it} className={rowClass?.(it)}>{(h) => children(it, i, h)}</ReorderRow>
+      ))}
+    </Reorder.Group>
+  );
+}
