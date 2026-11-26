@@ -209,7 +209,6 @@ export function Workout() {
               <div className="bold ellipsis" style={{ fontFamily: 'var(--display)', fontSize: 17 }}>{active.workoutName}</div>
               <div className="xs muted num">{fmtClock(elapsed / 1000)} · {doneSets}/{totalSets} serii · {bigFmt(sessionVolume(active))}</div>
             </div>
-            <button className="endbtn" onClick={() => setEnding(true)}>Zakończ</button>
             <button className="iconbtn" onClick={() => setOverview(true)} aria-label="Lista ćwiczeń"><Icon name="list" /></button>
           </div>
           <div className="segs">

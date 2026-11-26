@@ -267,7 +267,3 @@ table.t th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .exrow + .exrow { border-top: 1px solid var(--line); }
 .btn.shine { position: relative; overflow: hidden; }
 .btn.shine::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.4) 50%, transparent 65%); transform: translateX(-130%); animation: shine 3.4s ease-in-out infinite; pointer-events: none; }
-
-
-.endbtn { height: 44px; padding: 0 14px; border-radius: 14px; background: rgba(200,245,96,.12); color: var(--accent); font-weight: 700; font-size: 14px; border: 1px solid rgba(200,245,96,.35); flex: none; }
-.endbtn:active { transform: scale(.96); }
