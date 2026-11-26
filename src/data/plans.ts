@@ -31,6 +31,25 @@ export const PLANS: PlanTemplate[] = [
     ],
   },
   {
+    id: 'pp4-adv', name: 'Push-pull 4× – masa', split: 'push-pull', level: 'średniozaawansowany', daysPerWeek: 4, minutes: 90,
+    goal: ['masa'], equipment: ['hantle', 'sztanga', 'wyciąg', 'maszyna'], defaultDays: [0, 1, 3, 4],
+    description: 'Dla trenujących od dłuższego czasu, którzy stawiają na masę mięśniową. Cztery dłuższe sesje: A i B z naciskiem na klatkę, plecy i nogi, C i D na barki, triceps, nogi i ciąg. Po sesji D dwa dni wolnego. Ciężkie bazowe boje, na końcu ćwiczenia izolowane i core.',
+    blocks: [
+      b1([
+        w('A', 'Trening A', [x('bench', 4, '6', 210), x('squat', 4, '6', 210), x('db_fly', 3, '12', 120), x('lateral', 3, '12', 60, { superset: 'a' }), x('ext_rot', 3, '10', 60, { superset: 'a' }), x('skull', 4, '10', 105)]),
+        w('B', 'Trening B', [x('chinup', 4, '6', 180), x('row', 3, '8', 150), x('leg_curl', 4, '8', 120), x('incline_curl', 4, '10', 105), x('ab_wheel', 4, '8-15', 60)]),
+        w('C', 'Trening C', [x('ohp', 4, '6', 180), x('leg_press', 4, '10', 120), x('dips', 4, '8', 180), x('bb_oh_ext', 3, '10', 105), x('smith_calf', 3, '12', 60)]),
+        w('D', 'Trening D', [x('deadlift', 4, '5', 240), x('pulldown', 4, '10', 120), x('powell_raise', 3, '10', 75), x('preacher', 3, '10', 105), x('landmine_anti', 3, '10', 75)]),
+      ]),
+      b2([
+        w('A', 'Trening A', [x('bench', 5, '4', 210), x('squat', 4, '4', 210), x('db_fly', 3, '10', 120), x('lateral', 3, '10', 60, { superset: 'a' }), x('ext_rot', 3, '10', 60, { superset: 'a' }), x('skull', 4, '8', 105)]),
+        w('B', 'Trening B', [x('chinup', 4, '4', 180), x('row', 3, '6', 150), x('leg_curl', 4, '6', 120), x('incline_curl', 4, '8', 105), x('ab_wheel', 4, '8-15', 60)]),
+        w('C', 'Trening C', [x('ohp', 4, '4', 180), x('leg_press', 4, '8', 120), x('dips', 4, '6', 180), x('bb_oh_ext', 3, '8', 105), x('smith_calf', 3, '10', 60)]),
+        w('D', 'Trening D', [x('deadlift', 4, '4', 240), x('pulldown', 4, '8', 120), x('powell_raise', 3, '8', 75), x('preacher', 3, '8', 105), x('landmine_anti', 3, '8', 75)]),
+      ]),
+    ],
+  },
+  {
     id: 'fbw3-beg', name: 'Całe ciało 3× w tygodniu', split: 'FBW', level: 'początkujący', daysPerWeek: 3, minutes: 60,
     goal: ['sylwetka', 'masa', 'siła'], equipment: ['sztanga', 'hantle', 'wyciąg', 'maszyna'], defaultDays: [0, 2, 4],
     description: 'Najlepszy start: każdy trening angażuje całe ciało, więc każdą partię ćwiczysz 3 razy w tygodniu. Proste ćwiczenia bazowe, szybka nauka techniki i stały progres ciężaru.',

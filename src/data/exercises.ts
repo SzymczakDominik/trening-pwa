@@ -87,6 +87,11 @@ export const EXERCISES: Exercise[] = [
   e('abductor', 'Odwodzenie nóg na maszynie', ['pośladki'], 'maszyna', false, [], 2.5),
   e('crunch', 'Brzuszki (crunch)', ['brzuch'], 'masa ciała', false, [], 0, true),
   e('side_bend', 'Skłony boczne z kettlebellem (skosy brzucha)', ['brzuch'], 'inne', false, [], 2),
+  e('powell_raise', 'Wznosy Powell (leżąc bokiem na ławce)', ['barki'], 'hantle', false, [], 1),
+  e('landmine_anti', 'Antyrotacje ze sztangą w uchwycie (landmine)', ['brzuch'], 'sztanga', false, [], 2.5),
+  e('ext_rot', 'Rotacja zewnętrzna barku w oparciu o kolano', ['barki'], 'hantle', false, [], 0.5),
+  e('bb_oh_ext', 'Prostowanie ramion ze sztangą zza głowy', ['triceps'], 'sztanga', false, [], 1.25),
+  e('smith_calf', 'Wspięcia na palce na maszynie Smitha', ['łydki'], 'maszyna', false, [], 5),
   e('shrug', 'Szrugsy z hantlami', ['plecy'], 'hantle', false, ['przedramiona'], 2),
 ];
 
@@ -108,4 +113,4 @@ export function getExercise(id: string): Exercise {
 }
 
 /** ćwiczenia z ilustracją w public/img/ex/<id>-0.webp i -1.webp */
-export const IMG_IDS = new Set<string>(["glute_kickback", "adductor", "crunch", "side_bend", "abductor", "ab_wheel", "arnold", "back_ext", "band_chinup", "bb_curl", "bench", "bss", "cable_crunch", "cable_curl", "cable_fly", "cable_lateral", "cable_row", "calf_seated", "calf_single", "calf_stand", "captain", "chest_row", "chinup", "close_bench", "db_bench", "db_curl", "db_fly", "db_incline", "db_ohp", "db_rdl", "db_row", "db_skull", "dead_bug", "deadlift", "dips", "face_pull", "farmer", "front_squat", "glute_bridge", "goblet", "hack", "hammer", "hanging_raise", "hip_thrust", "incline_bench", "incline_curl", "lateral", "leg_curl", "leg_ext", "leg_press", "lunge", "machine_press", "oh_ext", "ohp", "pallof", "plank", "preacher", "pulldown", "pulldown_close", "pullup", "pushdown", "pushup", "rdl", "rear_delt", "row", "row_uh", "seated_curl", "shrug", "side_plank", "skull", "squat", "step_up", "straight_pulldown"]);
+export const IMG_IDS = new Set<string>(["powell_raise","landmine_anti","ext_rot","bb_oh_ext","smith_calf", "glute_kickback", "adductor", "crunch", "side_bend", "abductor", "ab_wheel", "arnold", "back_ext", "band_chinup", "bb_curl", "bench", "bss", "cable_crunch", "cable_curl", "cable_fly", "cable_lateral", "cable_row", "calf_seated", "calf_single", "calf_stand", "captain", "chest_row", "chinup", "close_bench", "db_bench", "db_curl", "db_fly", "db_incline", "db_ohp", "db_rdl", "db_row", "db_skull", "dead_bug", "deadlift", "dips", "face_pull", "farmer", "front_squat", "glute_bridge", "goblet", "hack", "hammer", "hanging_raise", "hip_thrust", "incline_bench", "incline_curl", "lateral", "leg_curl", "leg_ext", "leg_press", "lunge", "machine_press", "oh_ext", "ohp", "pallof", "plank", "preacher", "pulldown", "pulldown_close", "pullup", "pushdown", "pushup", "rdl", "rear_delt", "row", "row_uh", "seated_curl", "shrug", "side_plank", "skull", "squat", "step_up", "straight_pulldown"]);
