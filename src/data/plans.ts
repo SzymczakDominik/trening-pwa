@@ -14,6 +14,23 @@ const b2 = (workouts: WorkoutTemplate[]): Block => ({ name: 'Blok 2 · Rozwój',
 
 export const PLANS: PlanTemplate[] = [
   {
+    id: 'panie3', name: 'Trening dla pań', split: 'dół + całe ciało', level: 'początkujący', daysPerWeek: 3, minutes: 60,
+    goal: ['sylwetka'], equipment: ['hantle', 'wyciąg', 'maszyna', 'sztanga', 'inne'], defaultDays: [0, 2, 4],
+    description: 'Trzy dni z naciskiem na nogi i pośladki: suwnica, hip thrust, wykopy nogi w tył, przywodzenie i odwodzenie, do tego plecy, barki, ramiona i brzuch.',
+    blocks: [
+      b1([
+        w('D1', 'Dzień 1', [x('leg_press', 3, '10-15', 120), x('calf_stand', 3, '12-15', 60), x('pulldown', 3, '10-12', 90), x('side_bend', 3, '12-15', 60), x('glute_kickback', 3, '12-15', 60), x('db_curl', 3, '10-15', 60)]),
+        w('D2', 'Dzień 2', [x('back_ext', 3, '10-15', 90), x('side_bend', 3, '12-15', 60), x('deadlift', 3, '6-8', 150), x('face_pull', 3, '12-15', 60), x('ohp', 3, '8-10', 120), x('db_fly', 3, '10-15', 60), x('adductor', 3, '12-15', 60), x('abductor', 3, '12-15', 60)]),
+        w('D3', 'Dzień 3', [x('hip_thrust', 3, '8-12', 120), x('row', 3, '8-12', 90), x('db_bench', 3, '8-12', 90), x('lunge', 3, '10-12', 90), x('pushdown', 3, '10-15', 60), x('crunch', 3, '15-20', 45)]),
+      ]),
+      b2([
+        w('D1', 'Dzień 1', [x('leg_press', 4, '8-12', 150), x('calf_stand', 4, '10-15', 60), x('pulldown', 3, '8-10', 90), x('side_bend', 3, '10-15', 60), x('glute_kickback', 3, '10-12', 60), x('db_curl', 3, '8-12', 60)]),
+        w('D2', 'Dzień 2', [x('back_ext', 3, '8-12', 90), x('side_bend', 3, '10-15', 60), x('deadlift', 4, '5-6', 180), x('face_pull', 3, '12-15', 60), x('ohp', 3, '6-8', 150), x('db_fly', 3, '10-12', 60), x('adductor', 3, '10-15', 60), x('abductor', 3, '10-15', 60)]),
+        w('D3', 'Dzień 3', [x('hip_thrust', 4, '6-10', 150), x('row', 3, '8-10', 90), x('db_bench', 3, '8-10', 90), x('lunge', 3, '8-12', 90), x('pushdown', 3, '10-12', 60), x('crunch', 3, '15-20', 45)]),
+      ]),
+    ],
+  },
+  {
     id: 'fbw3-beg', name: 'Całe ciało 3× w tygodniu', split: 'FBW', level: 'początkujący', daysPerWeek: 3, minutes: 60,
     goal: ['sylwetka', 'masa', 'siła'], equipment: ['sztanga', 'hantle', 'wyciąg', 'maszyna'], defaultDays: [0, 2, 4],
     description: 'Najlepszy start: każdy trening angażuje całe ciało, więc każdą partię ćwiczysz 3 razy w tygodniu. Proste ćwiczenia bazowe, szybka nauka techniki i stały progres ciężaru.',
@@ -150,23 +167,6 @@ export const PLANS: PlanTemplate[] = [
         w('A', 'Trening A', [x('bss', 4, '8-10', 90), x('db_bench', 4, '8-10', 90), x('db_row', 4, '8-10', 90), x('db_rdl', 3, '8-10', 90), x('lateral', 3, '12-20', 60)]),
         w('B', 'Trening B', [x('step_up', 3, '8-10', 90), x('arnold', 3, '8-10', 90), x('chinup', 3, '3-6', 150), x('glute_bridge', 3, '10-12', 60), x('hammer', 3, '10-12', 60), x('pushup', 3, '10-20', 60)]),
         w('C', 'Trening C', [x('goblet', 4, '8-12', 90), x('db_incline', 3, '8-10', 90), x('db_row', 3, '8-10', 90), x('calf_single', 3, '10-15', 60), x('incline_curl', 2, '10-12', 60), x('ab_wheel', 3, '6-10', 60)]),
-      ]),
-    ],
-  },
-  {
-    id: 'panie3', name: 'Trening dla pań', split: 'dół + całe ciało', level: 'początkujący', daysPerWeek: 3, minutes: 60,
-    goal: ['sylwetka'], equipment: ['hantle', 'wyciąg', 'maszyna', 'sztanga', 'inne'], defaultDays: [0, 2, 4],
-    description: 'Trzy dni z naciskiem na nogi i pośladki: suwnica, hip thrust, wykopy nogi w tył, przywodzenie i odwodzenie, do tego plecy, barki, ramiona i brzuch.',
-    blocks: [
-      b1([
-        w('D1', 'Dzień 1', [x('leg_press', 3, '10-15', 120), x('calf_stand', 3, '12-15', 60), x('pulldown', 3, '10-12', 90), x('side_bend', 3, '12-15', 60), x('glute_kickback', 3, '12-15', 60), x('db_curl', 3, '10-15', 60)]),
-        w('D2', 'Dzień 2', [x('back_ext', 3, '10-15', 90), x('side_bend', 3, '12-15', 60), x('deadlift', 3, '6-8', 150), x('face_pull', 3, '12-15', 60), x('ohp', 3, '8-10', 120), x('db_fly', 3, '10-15', 60), x('adductor', 3, '12-15', 60), x('abductor', 3, '12-15', 60)]),
-        w('D3', 'Dzień 3', [x('hip_thrust', 3, '8-12', 120), x('row', 3, '8-12', 90), x('db_bench', 3, '8-12', 90), x('lunge', 3, '10-12', 90), x('pushdown', 3, '10-15', 60), x('crunch', 3, '15-20', 45)]),
-      ]),
-      b2([
-        w('D1', 'Dzień 1', [x('leg_press', 4, '8-12', 150), x('calf_stand', 4, '10-15', 60), x('pulldown', 3, '8-10', 90), x('side_bend', 3, '10-15', 60), x('glute_kickback', 3, '10-12', 60), x('db_curl', 3, '8-12', 60)]),
-        w('D2', 'Dzień 2', [x('back_ext', 3, '8-12', 90), x('side_bend', 3, '10-15', 60), x('deadlift', 4, '5-6', 180), x('face_pull', 3, '12-15', 60), x('ohp', 3, '6-8', 150), x('db_fly', 3, '10-12', 60), x('adductor', 3, '10-15', 60), x('abductor', 3, '10-15', 60)]),
-        w('D3', 'Dzień 3', [x('hip_thrust', 4, '6-10', 150), x('row', 3, '8-10', 90), x('db_bench', 3, '8-10', 90), x('lunge', 3, '8-12', 90), x('pushdown', 3, '10-12', 60), x('crunch', 3, '15-20', 45)]),
       ]),
     ],
   },
