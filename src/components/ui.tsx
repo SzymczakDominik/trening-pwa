@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, Reorder, useDragControls, type DragControls } from 'motion/react';
 import {
   ArrowLeftRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChartNoAxesColumn, ClipboardList,
@@ -23,14 +23,56 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
     <AnimatePresence>
       {open && (
         <motion.div className="sheet-bg" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-          <motion.div className="sheet" onClick={(e) => e.stopPropagation()} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 34, stiffness: 380 }}>
-            <div className="grip" />
-            {title && <h3>{title}</h3>}
-            {children}
-          </motion.div>
+          <SheetBody onClose={onClose} title={title}>{children}</SheetBody>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/** Treść arkusza: zamykana przeciągnięciem w dół (gdy treść jest na samej górze). */
+function SheetBody({ onClose, title, children }: { onClose: () => void; title?: string; children: ReactNode }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const w = wrap.current, sh = sheet.current; if (!w || !sh) return;
+    let y0 = 0, armed = false, dragging = false, dy = 0;
+    const down = (e: TouchEvent) => {
+      const t = e.target as HTMLElement;
+      armed = sh.scrollTop <= 0 && !t.closest('.draghandle, input, select, textarea');
+      dragging = false; dy = 0; y0 = e.touches[0].clientY;
+    };
+    const move = (e: TouchEvent) => {
+      if (!armed) return;
+      dy = e.touches[0].clientY - y0;
+      if (!dragging && dy > 10 && sh.scrollTop <= 0) { dragging = true; w.style.transition = 'none'; }
+      if (dragging) {
+        if (e.cancelable) e.preventDefault();
+        w.style.transform = `translateY(${Math.max(0, dy)}px)`;
+      } else if (dy < -10) armed = false;
+    };
+    const up = () => {
+      if (!dragging) return;
+      dragging = false; armed = false;
+      w.style.transition = 'transform .25s cubic-bezier(.22,.9,.3,1)';
+      if (dy > 110) { w.style.transform = 'translateY(100%)'; setTimeout(() => closeRef.current(), 120); }
+      else w.style.transform = '';
+    };
+    w.addEventListener('touchstart', down, { passive: true });
+    w.addEventListener('touchmove', move, { passive: false });
+    w.addEventListener('touchend', up); w.addEventListener('touchcancel', up);
+    return () => { w.removeEventListener('touchstart', down); w.removeEventListener('touchmove', move); w.removeEventListener('touchend', up); w.removeEventListener('touchcancel', up); };
+  }, []);
+  return (
+    <div ref={wrap} className="sheet-wrap" onClick={(e) => e.stopPropagation()}>
+      <motion.div ref={sheet} className="sheet" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 34, stiffness: 380 }}>
+        <div className="grip" />
+        {title && <h3>{title}</h3>}
+        {children}
+      </motion.div>
+    </div>
   );
 }
 

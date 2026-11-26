@@ -137,7 +137,8 @@ label.field.left > span { text-align: left; }
 
 /* bottom sheet */
 .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.62); z-index: 50; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
-.sheet { width: 100%; max-width: 640px; max-height: 92dvh; overflow-y: auto; background: var(--surface); border-top: 1px solid var(--line2); border-radius: 28px 28px 0 0; padding: 10px 16px calc(var(--safe-bottom) + 20px); }
+.sheet-wrap { width: 100%; max-width: 640px; }
+.sheet { width: 100%; max-width: 640px; overscroll-behavior: contain; max-height: 92dvh; overflow-y: auto; background: var(--surface); border-top: 1px solid var(--line2); border-radius: 28px 28px 0 0; padding: 10px 16px calc(var(--safe-bottom) + 20px); }
 .sheet .grip { width: 42px; height: 5px; border-radius: 3px; background: var(--surface3); margin: 0 auto 14px; }
 .sheet h3 { font-family: var(--display); font-size: 22px; font-weight: 700; margin-bottom: 14px; text-align: center; }
 
