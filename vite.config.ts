@@ -32,6 +32,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: 'index.html',
+        runtimeCaching: [{ urlPattern: /\/img\/ex\/.*\.webp$/, handler: 'CacheFirst', options: { cacheName: 'ex-img', expiration: { maxEntries: 400, maxAgeSeconds: 60*60*24*180 } } }],
       },
     }),
   ],

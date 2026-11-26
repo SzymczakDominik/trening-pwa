@@ -5,6 +5,7 @@ import { getExercise, MUSCLES } from '../data/exercises';
 import { addDays, bestE1rm, e1rm, findPRs, fmtDate, fmtDuration, fmtShort, historyFor, mondayOf, muscleSets, sessionSets, sessionVolume, todayStr, WEEKLY_SETS, workSets } from '../lib/calc';
 import { BarChart, LineChart } from '../components/charts';
 import { Icon, NumInput, Seg, TopBar, bigFmt, kgFmt, toast } from '../components/ui';
+import { ExImg } from '../components/ExImg';
 import type { Session } from '../types';
 
 type PTab = 'overview' | 'exercises' | 'body';
@@ -80,9 +81,9 @@ function Overview() {
       <div className="section-h"><h2>Ostatnie rekordy</h2></div>
       <div className="card">
         {prs.length ? prs.map(({ s, pr }, i) => (
-          <button key={i} className="exrow" style={{ width: '100%', textAlign: 'left' }} onClick={() => push({ name: 'exercise', id: pr.exId })}>
-            <div className="badge"><Icon name="trophy" size={18} /></div>
-            <div className="grow"><div className="ellipsis">{getExercise(pr.exId).name}</div><div className="xs muted">{fmtDate(s.date)} · {pr.type === 'kg' ? 'ciężar' : 'szac. 1RM'}</div></div>
+          <button key={i} className="item" style={{ width: '100%', textAlign: 'left' }} onClick={() => push({ name: 'exercise', id: pr.exId })}>
+            <ExImg id={pr.exId} size="sq" />
+            <div className="grow"><div className="t">{getExercise(pr.exId).name}</div><div className="s">{fmtDate(s.date)} · {pr.type === 'kg' ? 'ciężar' : 'szac. 1RM'}</div></div>
             <div className="bold accent num">{kgFmt(pr.value)} kg</div>
           </button>
         )) : <div className="small muted">Rekordy pojawią się od drugiego treningu danego ćwiczenia.</div>}
@@ -115,9 +116,10 @@ function ExerciseList() {
     <div className="mt16">
       {rows.map((r) => (
         <button key={r.id} className="list-btn" onClick={() => push({ name: 'exercise', id: r.id })}>
+          <ExImg id={r.id} size="sq" />
           <div className="grow">
-            <div className="bold ellipsis">{getExercise(r.id).name}</div>
-            <div className="xs muted">{r.n} sesji · ostatnio {fmtShort(r.last)}</div>
+            <div className="bold" style={{ lineHeight: 1.25 }}>{getExercise(r.id).name}</div>
+            <div className="xs muted" style={{ marginTop: 3 }}>{r.n} sesji · ostatnio {fmtShort(r.last)}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div className="bold num">{r.best ? `${kgFmt(r.best)} kg` : '–'}</div>
@@ -154,7 +156,8 @@ export function ExerciseDetail({ id }: { id: string }) {
   return (
     <div className="screen">
       <TopBar title={ex.name} onBack={pop} />
-      <div className="small muted">{ex.primary.join(', ')}{ex.secondary?.length ? ` · pomocniczo: ${ex.secondary.join(', ')}` : ''} · {ex.equipment}</div>
+      <ExImg id={id} size="hero16" animate />
+      <div className="small muted mt12 center">{ex.primary.join(', ')}{ex.secondary?.length ? ` · pomocniczo: ${ex.secondary.join(', ')}` : ''} · {ex.equipment}</div>
       <div className="grid3 mt16">
         <div className="card stat"><b style={{ fontSize: 20 }}>{bestE ? kgFmt(bestE) : '–'}</b><span>szac. 1RM (kg)</span></div>
         <div className="card stat"><b style={{ fontSize: 20 }}>{allSets.length ? kgFmt(Math.max(...allSets.map((s) => s.kg))) : '–'}</b><span>maks. ciężar</span></div>
@@ -216,7 +219,7 @@ export function SessionDetail({ id }: { id: string }) {
       <div className="stack mt12">
         {s.entries.map((en) => (
           <button key={en.uid} className="card" style={{ textAlign: 'left' }} onClick={() => push({ name: 'exercise', id: en.exId })}>
-            <div className="between"><div className="bold">{getExercise(en.exId).name}</div><span className="xs muted">1RM ≈ {kgFmt(bestE1rm(en))}</span></div>
+            <div className="row"><ExImg id={en.exId} size="sm" /><div className="bold grow" style={{ lineHeight: 1.25 }}>{getExercise(en.exId).name}</div><span className="xs muted">1RM ≈ {kgFmt(bestE1rm(en))}</span></div>
             <div className="small muted mt8">{workSets(en).map((x, i) => <span key={i} style={{ marginRight: 12 }}>{kgFmt(x.kg)} × {x.reps}{x.rir != null ? <span className="violet"> @{x.rir}</span> : null}</span>)}</div>
           </button>
         ))}

@@ -4,6 +4,7 @@ import { useNav } from '../nav';
 import { allExercises, getExercise, MUSCLES } from '../data/exercises';
 import { Icon, NumInput, Sheet, Stepper, TopBar, toast } from '../components/ui';
 import { uid } from '../lib/calc';
+import { ExImg } from '../components/ExImg';
 import type { Equipment, Exercise, Muscle, PlannedExercise } from '../types';
 
 export function ExercisePicker({ open, onClose, onPick, title = 'Dodaj ćwiczenie' }: { open: boolean; onClose: () => void; onPick: (id: string) => void; title?: string }) {
@@ -19,14 +20,14 @@ export function ExercisePicker({ open, onClose, onPick, title = 'Dodaj ćwiczeni
     <Sheet open={open} onClose={onClose} title={title}>
       {!creating ? (
         <>
-          <input className="input" placeholder="Szukaj ćwiczenia…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="input left" placeholder="Szukaj ćwiczenia…" value={q} onChange={(e) => setQ(e.target.value)} />
           <div className="chips mt12">{MUSCLES.map((x) => <button key={x} className={`chip ${m === x ? 'on' : ''}`} onClick={() => setM(m === x ? null : x)}>{x}</button>)}</div>
           <div className="mt12" style={{ minHeight: 300 }}>
             {list.map((e) => (
-              <button key={e.id} className="exrow" style={{ width: '100%', textAlign: 'left' }} onClick={() => { onPick(e.id); onClose(); }}>
-                <div className="badge"><Icon name="dumbbell" size={18} /></div>
-                <div className="grow"><div>{e.name}</div><div className="xs muted">{e.primary.join(', ')} · {e.equipment}{e.custom ? ' · własne' : ''}</div></div>
-                <Icon name="plus" size={18} />
+              <button key={e.id} className="item" style={{ width: '100%', textAlign: 'left' }} onClick={() => { onPick(e.id); onClose(); }}>
+                <ExImg id={e.id} size="sq" />
+                <div className="grow"><div className="t">{e.name}</div><div className="s">{e.primary.join(', ')} · {e.equipment}{e.custom ? ' · własne' : ''}</div></div>
+                <span className="accent"><Icon name="plus" size={20} /></span>
               </button>
             ))}
             {!list.length && <div className="empty small">Brak wyników</div>}
@@ -35,7 +36,7 @@ export function ExercisePicker({ open, onClose, onPick, title = 'Dodaj ćwiczeni
         </>
       ) : (
         <div className="stack">
-          <label className="field"><span>Nazwa</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></label>
+          <label className="field"><span>Nazwa</span><input className="input left" value={name} onChange={(e) => setName(e.target.value)} /></label>
           <label className="field"><span>Główna partia</span>
             <select className="input" value={muscle} onChange={(e) => setMuscle(e.target.value as Muscle)}>{MUSCLES.map((x) => <option key={x}>{x}</option>)}</select>
           </label>
@@ -99,7 +100,7 @@ export function WorkoutEditor({ blockIndex, workoutId }: { blockIndex: number; w
   return (
     <div className="screen">
       <TopBar title="Edycja treningu" onBack={pop} />
-      <label className="field"><span>Nazwa</span>
+      <label className="field"><span>Nazwa treningu</span>
         <input className="input" value={w.name} onChange={(e) => updateWorkout(blockIndex, workoutId, (x) => { x.name = e.target.value; })} />
       </label>
       <div className="small muted mt12">{program.blocks[blockIndex].name} · zmiany dotyczą tylko tego bloku</div>
@@ -113,9 +114,12 @@ export function WorkoutEditor({ blockIndex, workoutId }: { blockIndex: number; w
                   <button className="iconbtn" style={{ width: 32, height: 28 }} disabled={i === 0} onClick={() => move(i, -1)}><Icon name="up" size={16} /></button>
                   <button className="iconbtn" style={{ width: 32, height: 28 }} disabled={i === w.exercises.length - 1} onClick={() => move(i, 1)}><Icon name="down" size={16} /></button>
                 </div>
-                <button className="grow" style={{ textAlign: 'left' }} onClick={() => setEdit(e.uid)}>
-                  <div className="bold">{i + 1}. {ex.name}</div>
-                  <div className="xs muted">{e.sets} × {e.repMin}–{e.repMax} · RIR {e.rir} · {e.restSec}s{e.kg ? ` · ${e.kg} kg` : ''}{e.superset ? ` · superseria ${e.superset.toUpperCase()}` : ''}</div>
+                <button className="row grow" style={{ textAlign: 'left' }} onClick={() => setEdit(e.uid)}>
+                  <ExImg id={e.exId} size="sq" />
+                  <div className="grow">
+                  <div className="bold" style={{ lineHeight: 1.25 }}>{ex.name}</div>
+                  <div className="xs muted" style={{ marginTop: 3 }}>{e.sets} × {e.repMin}–{e.repMax} · RIR {e.rir} · {e.restSec}s{e.kg ? ` · ${e.kg} kg` : ''}{e.superset ? ` · superseria ${e.superset.toUpperCase()}` : ''}</div>
+                  </div>
                 </button>
                 <button className="iconbtn plain" onClick={() => setPicker({ swap: e.uid })} aria-label="Zamień"><Icon name="swap" size={18} /></button>
                 <button className="iconbtn plain danger" onClick={() => upd((l) => { l.splice(i, 1); })} aria-label="Usuń"><Icon name="trash" size={18} /></button>

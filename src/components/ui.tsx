@@ -1,55 +1,36 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import {
+  ArrowLeftRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChartNoAxesColumn, ClipboardList,
+  Cloud, Dumbbell, Ellipsis, Flame, House, Info, List, Minus, Pencil, Play, Plus, Search, Share, SkipForward, Timer, Trash2, Trophy, User, Wrench, X,
+  PersonStanding,
+} from 'lucide-react';
 
-const P: Record<string, string> = {
-  home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
-  plan: 'M4 5h16M4 12h16M4 19h10',
-  cal: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
-  chart: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
-  more: 'M5 12h.01M12 12h.01M19 12h.01',
-  back: 'M15 5l-7 7 7 7',
-  close: 'M6 6l12 12M18 6 6 18',
-  check: 'M5 12.5l4.5 4.5L19 7',
-  plus: 'M12 5v14M5 12h14',
-  minus: 'M5 12h14',
-  up: 'M6 15l6-6 6 6',
-  down: 'M6 9l6 6 6-6',
-  right: 'M9 5l7 7-7 7',
-  trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
-  edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
-  play: 'M7 4v16l13-8z',
-  timer: 'M12 8v5l3 2M9 2h6M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
-  flame: 'M12 22c4 0 7-3 7-7 0-5-5-8-5-13-3 2-5 5-5 8-1-1-2-2-2-4-2 2-2 5-2 9 0 4 3 7 7 7z',
-  trophy: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3',
-  user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
-  tool: 'M14 7a4 4 0 0 0 5 5l-9 9-3-3 9-9a4 4 0 0 0-2-2zM4 4l4 4',
-  cloud: 'M7 18a5 5 0 0 1-.5-10A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z',
-  swap: 'M7 7h13l-4-4M17 17H4l4 4',
-  info: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-5M12 8h.01',
-  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5',
-  body: 'M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 9h14M12 9v6M9 22l3-7 3 7',
-  share: 'M12 3v12M7 8l5-5 5 5M5 14v6h14v-6',
-  dumbbell: 'M3 10v4M6 7v10M18 7v10M21 10v4M6 12h12',
-  skip: 'M5 5v14l10-7zM19 5v14',
+const ICONS: Record<string, typeof Check> = {
+  home: House, plan: ClipboardList, cal: CalendarDays, chart: ChartNoAxesColumn, more: Ellipsis, back: ChevronLeft, close: X,
+  check: Check, plus: Plus, minus: Minus, up: ChevronUp, down: ChevronDown, right: ChevronRight, trash: Trash2, edit: Pencil,
+  play: Play, timer: Timer, flame: Flame, trophy: Trophy, user: User, tool: Wrench, cloud: Cloud, swap: ArrowLeftRight, info: Info,
+  search: Search, body: PersonStanding, share: Share, dumbbell: Dumbbell, skip: SkipForward, list: List,
 };
 
-export function Icon({ name, size = 22, stroke = 2, fill }: { name: keyof typeof P | string; size?: number; stroke?: number; fill?: boolean }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d={P[name] ?? ''} />
-    </svg>
-  );
+export function Icon({ name, size = 22, stroke = 2, fill }: { name: string; size?: number; stroke?: number; fill?: boolean }) {
+  const C = ICONS[name] ?? Info;
+  return <C size={size} strokeWidth={stroke} fill={fill ? 'currentColor' : 'none'} aria-hidden />;
 }
 
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title?: string; children: ReactNode }) {
-  if (!open) return null;
   return (
-    <div className="sheet-bg" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="grip" />
-        {title && <h3>{title}</h3>}
-        {children}
-      </div>
-    </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div className="sheet-bg" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+          <motion.div className="sheet" onClick={(e) => e.stopPropagation()} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 34, stiffness: 380 }}>
+            <div className="grip" />
+            {title && <h3>{title}</h3>}
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -64,25 +45,31 @@ export function TopBar({ title, onBack, right }: { title?: ReactNode; onBack?: (
 }
 
 export function Seg<T extends string>({ value, options, onChange }: { value: T; options: { v: T; l: string }[]; onChange: (v: T) => void }) {
+  const id = useId();
   return (
     <div className="seg">
-      {options.map((o) => <button key={o.v} className={o.v === value ? 'on' : ''} onClick={() => onChange(o.v)}>{o.l}</button>)}
+      {options.map((o) => (
+        <button key={o.v} className={o.v === value ? 'on' : ''} onClick={() => onChange(o.v)}>
+          {o.v === value && <motion.span layoutId={id} className="pill" style={{ left: 0, right: 0 }} transition={{ type: 'spring', damping: 30, stiffness: 420 }} />}
+          <span style={{ position: 'relative', zIndex: 1 }}>{o.l}</span>
+        </button>
+      ))}
     </div>
   );
 }
 
 export function Stepper({ value, onChange, step = 1, min = 0, max = 999, suffix }: { value: number; onChange: (n: number) => void; step?: number; min?: number; max?: number; suffix?: string }) {
   return (
-    <div className="row" style={{ gap: 6 }}>
+    <div className="row" style={{ gap: 8 }}>
       <button className="iconbtn" onClick={() => onChange(Math.max(min, +(value - step).toFixed(2)))}><Icon name="minus" size={18} /></button>
-      <div className="num bold" style={{ minWidth: 54, textAlign: 'center' }}>{value}{suffix}</div>
+      <div className="num bold" style={{ minWidth: 56, textAlign: 'center', fontFamily: 'var(--display)', fontSize: 18 }}>{value}{suffix}</div>
       <button className="iconbtn" onClick={() => onChange(Math.min(max, +(value + step).toFixed(2)))}><Icon name="plus" size={18} /></button>
     </div>
   );
 }
 
-/** Pole liczbowe przyjazne dla iOS (przecinek → kropka, klawiatura dziesiętna). */
-export function NumInput({ value, onChange, className = 'setin', placeholder, decimal = true }: { value: number | undefined; onChange: (n: number) => void; className?: string; placeholder?: string; decimal?: boolean }) {
+/** Pole liczbowe przyjazne dla iOS (przecinek → kropka, klawiatura dziesiętna). Zawsze wyśrodkowane. */
+export function NumInput({ value, onChange, className = 'input', placeholder, decimal = true }: { value: number | undefined; onChange: (n: number) => void; className?: string; placeholder?: string; decimal?: boolean }) {
   const [txt, setTxt] = useState(value ? String(value) : '');
   useEffect(() => { if (Number(txt.replace(',', '.')) !== value) setTxt(value ? String(value) : ''); /* eslint-disable-next-line */ }, [value]);
   return (
@@ -99,8 +86,8 @@ export function Ring({ value, size = 64, stroke = 7, color = 'var(--accent)', ch
   return (
     <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,.1)" strokeWidth={stroke} fill="none" />
-        <circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(1, Math.max(0, value)))} style={{ transition: 'stroke-dashoffset .3s' }} />
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,.08)" strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(1, Math.max(0, value)))} style={{ transition: 'stroke-dashoffset .25s linear, stroke .3s' }} />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>{children}</div>
     </div>
@@ -113,7 +100,29 @@ export function Toaster() {
   const [m, setM] = useState<string | null>(null);
   useEffect(() => { toastSet = setM; return () => { toastSet = null; }; }, []);
   useEffect(() => { if (!m) return; const t = setTimeout(() => setM(null), 2400); return () => clearTimeout(t); }, [m]);
-  return m ? <div className="toast">{m}</div> : null;
+  return (
+    <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 90, pointerEvents: 'none', display: 'flex', justifyContent: 'center' }}>
+      <AnimatePresence>
+        {m && (
+          <motion.div key={m} className="toast" style={{ position: 'static', marginBottom: 'calc(var(--safe-bottom) + 92px)' }}
+            initial={{ opacity: 0, y: 20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10 }} transition={{ type: 'spring', damping: 26, stiffness: 380 }}>
+            {m}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Płynnie animowana liczba. */
+export function CountUp({ value, format = (n: number) => String(Math.round(n)) }: { value: number; format?: (n: number) => string }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf = 0; const from = 0; const t0 = performance.now(); const dur = 700;
+    const tick = (t: number) => { const p = Math.min(1, (t - t0) / dur); setV(from + (value - from) * (1 - (1 - p) ** 3)); if (p < 1) raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick); return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{format(v)}</>;
 }
 
 export const kgFmt = (n: number) => (Math.round(n * 10) / 10).toLocaleString('pl-PL');

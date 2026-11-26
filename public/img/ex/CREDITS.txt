@@ -1,0 +1,3 @@
+Ilustracje ćwiczeń pochodzą z otwartej bazy "Free Exercise DB"
+(https://github.com/yuhonas/free-exercise-db), udostępnionej na licencji
+Unlicense (domena publiczna). Obrazy przeskalowano do 480 px (WebP).

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import confetti from 'canvas-confetti';
 import { useStore, liveSessions } from '../lib/store';
 import { useNav } from '../nav';
 import { getExercise } from '../data/exercises';
 import { findPRs, fmtClock, fmtDuration, historyFor, sessionSets, sessionVolume, suggest, uid, workSets } from '../lib/calc';
 import { Icon, NumInput, Ring, Sheet, bigFmt, kgFmt, toast } from '../components/ui';
+import { ExImg } from '../components/ExImg';
 import { ExercisePicker } from './Editor';
 import type { EntryLog, Session } from '../types';
 
@@ -28,239 +31,363 @@ export function beep(freq = 880, ms = 180, times = 1) {
   try { navigator.vibrate?.([200, 100, 200]); } catch { /* iOS nie obsługuje */ }
 }
 
-/* ───────── pasek przerwy ───────── */
-export function RestBar({ aboveTabs = false }: { aboveTabs?: boolean }) {
+/** Odliczanie przerwy: zwraca pozostałe sekundy i pilnuje sygnałów 3‑2‑1 i końca. */
+function useRestClock() {
   const rest = useStore((s) => s.rest);
-  const adjust = useStore((s) => s.adjustRest);
-  const clear = useStore((s) => s.clearRest);
   const [now, setNow] = useState(Date.now());
   const beeped = useRef<number>(-1);
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t); }, []);
+  useEffect(() => { if (!rest) return; const t = setInterval(() => setNow(Date.now()), 200); return () => clearInterval(t); }, [rest]);
   const left = rest ? (rest.endsAt - now) / 1000 : 0;
   useEffect(() => {
-    if (!rest) return;
+    if (!rest) { beeped.current = -1; return; }
     const s = Math.ceil(left);
     if (s <= 3 && s >= 1 && beeped.current !== s) { beeped.current = s; beep(660, 90); }
     if (s <= 0 && beeped.current !== 0) { beeped.current = 0; beep(990, 260, 2); }
     if (s > 3) beeped.current = -1;
   }, [left, rest]);
+  return { rest, left };
+}
+
+/* ───────── mały pasek przerwy (gdy trening jest zminimalizowany) ───────── */
+export function RestBar() {
+  const { rest, left } = useRestClock();
+  const adjust = useStore((s) => s.adjustRest);
+  const clear = useStore((s) => s.clearRest);
+  const { push } = useNav();
   if (!rest) return null;
   const over = left <= 0;
   return (
-    <div className={`restbar ${over ? 'end' : ''}`} style={aboveTabs ? { bottom: 'calc(var(--safe-bottom) + 86px)' } : undefined}>
-      <div className="row">
-        <Ring value={over ? 1 : 1 - left / rest.total} size={62} stroke={6} color={over ? 'var(--accent)' : 'var(--violet)'}>
-          <Icon name={over ? 'play' : 'timer'} size={20} fill={over} />
+    <motion.div className={`restbar ${over ? 'end' : ''}`} initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+      <div className="row" onClick={() => push({ name: 'workout' })}>
+        <Ring value={over ? 1 : 1 - left / rest.total} size={52} stroke={5} color={over ? 'var(--accent)' : 'var(--violet)'}>
+          <Icon name={over ? 'play' : 'timer'} size={16} fill={over} />
         </Ring>
         <div className="grow">
           <div className="xs muted ellipsis">{rest.label}</div>
-          <div className="bigtime" style={{ fontSize: 38, color: over ? 'var(--accent)' : undefined }}>{over ? `+${fmtClock(-left)}` : fmtClock(left)}</div>
-          {rest.next && <div className="small ellipsis"><span className="muted">{rest.betweenExercises ? 'Następne ćwiczenie: ' : 'Teraz: '}</span><b>{rest.next}</b></div>}
+          <div className="num bold" style={{ fontFamily: 'var(--display)', fontSize: 26, color: over ? 'var(--accent)' : undefined }}>{over ? `+${fmtClock(-left)}` : fmtClock(left)}</div>
         </div>
+        <button className="btn sm" onClick={(e) => { e.stopPropagation(); adjust(15); }}>+15 s</button>
+        <button className={`btn sm ${over ? 'primary' : 'violet'}`} onClick={(e) => { e.stopPropagation(); clear(); }}>{over ? 'OK' : 'Pomiń'}</button>
       </div>
-      <div className="row mt12">
-        <button className="btn sm grow" onClick={() => adjust(-15)}>−15 s</button>
-        <button className="btn sm grow" onClick={() => adjust(15)}>+15 s</button>
-        <button className={`btn sm grow ${over ? 'primary' : 'violet'}`} onClick={clear}>{over ? 'Do dzieła' : 'Pomiń'}</button>
-      </div>
-    </div>
+    </motion.div>
   );
 }
 
-/* ───────── ekran treningu ───────── */
+/* ───────── odtwarzacz treningu ───────── */
+const unitOf = (name: string) => (name.includes('(sekundy)') ? { l: 'Sekundy', step: 5 } : name.includes('(metry)') ? { l: 'Metry', step: 5 } : { l: 'Powtórzenia', step: 1 });
+
 export function Workout() {
   const active = useStore((s) => s.active);
   const data = useStore((s) => s.data);
   const update = useStore((s) => s.updateActive);
   const startRest = useStore((s) => s.startRest);
   const clearRest = useStore((s) => s.clearRest);
+  const adjustRest = useStore((s) => s.adjustRest);
   const finish = useStore((s) => s.finishActive);
   const discard = useStore((s) => s.discardActive);
-  const rest = useStore((s) => s.rest);
   const { pop, push } = useNav();
+  const { rest, left } = useRestClock();
   const [now, setNow] = useState(Date.now());
   const [focus, setFocus] = useState<string | null>(null);
+  const [selSet, setSelSet] = useState<number | null>(null);
   const [picker, setPicker] = useState<null | { swap?: string }>(null);
   const [menu, setMenu] = useState<string | null>(null);
+  const [overview, setOverview] = useState(false);
   const [ending, setEnding] = useState(false);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
 
+  // ekran nie gaśnie w trakcie treningu
+  useEffect(() => {
+    let lock: { release?: () => void } | undefined;
+    const req = async () => { try { lock = await (navigator as unknown as { wakeLock?: { request: (t: string) => Promise<{ release: () => void }> } }).wakeLock?.request('screen'); } catch { /* brak */ } };
+    req();
+    const vis = () => { if (document.visibilityState === 'visible') req(); };
+    document.addEventListener('visibilitychange', vis);
+    return () => { document.removeEventListener('visibilitychange', vis); lock?.release?.(); };
+  }, []);
+
   const sessions = liveSessions(data);
-  const firstOpen = active?.entries.find((e) => e.sets.some((s) => !s.done))?.uid ?? null;
-  const cur = focus && active?.entries.some((e) => e.uid === focus) ? focus : firstOpen;
+  const entries = active?.entries ?? [];
+  const firstOpen = entries.find((e) => e.sets.some((s) => !s.done));
+  const cur: EntryLog | undefined = entries.find((e) => e.uid === focus) ?? firstOpen ?? entries[entries.length - 1];
+  const curIdxEntry = cur ? entries.indexOf(cur) : -1;
 
   if (!active) {
     return <div className="screen"><div className="empty">Brak aktywnego treningu.</div><button className="btn block" onClick={pop}>Wróć</button></div>;
   }
-  const totalSets = active.entries.reduce((a, e) => a + e.sets.length, 0);
-  const doneSets = active.entries.reduce((a, e) => a + e.sets.filter((s) => s.done).length, 0);
+
+  const totalSets = entries.reduce((a, e) => a + e.sets.length, 0);
+  const doneSets = entries.reduce((a, e) => a + e.sets.filter((s) => s.done).length, 0);
+  const elapsed = now - active.startedAt;
+
+  const firstUndone = cur ? cur.sets.findIndex((s) => !s.done) : -1;
+  const setIdx = cur ? (selSet != null && selSet < cur.sets.length ? selSet : firstUndone >= 0 ? firstUndone : Math.max(0, cur.sets.length - 1)) : 0;
+  const curSet = cur?.sets[setIdx];
+  const ex = cur ? getExercise(cur.exId) : undefined;
+  const unit = ex ? unitOf(ex.name) : unitOf('');
+  const pe = cur?.plan;
+  const last = cur ? historyFor(cur.exId, sessions)[0] : undefined;
+  const sg = cur && pe && ex ? suggest({ uid: '', exId: cur.exId, sets: pe.sets, repMin: pe.repMin, repMax: pe.repMax, rir: pe.rir, restSec: pe.restSec }, ex, sessions) : null;
 
   const nextOpenAfter = (s: Session, uidCur: string) => {
     const i = s.entries.findIndex((e) => e.uid === uidCur);
     return [...s.entries.slice(i + 1), ...s.entries.slice(0, i)].find((e) => e.sets.some((x) => !x.done));
   };
+  const detailOf = (e: EntryLog, idx: number) => `Seria ${idx + 1} z ${e.sets.length}${e.plan ? ` · ${e.plan.repMin === e.plan.repMax ? e.plan.repMin : `${e.plan.repMin}–${e.plan.repMax}`} powt.` : ''}`;
 
-  const toggleSet = (en: EntryLog, si: number) => {
+  const setVal = (patch: Partial<EntryLog['sets'][0]>, propagate = false) => {
+    if (!cur) return;
+    update((s) => {
+      const e = s.entries.find((x) => x.uid === cur.uid)!;
+      Object.assign(e.sets[setIdx], patch);
+      if (propagate) for (let k = setIdx + 1; k < e.sets.length; k++) if (!e.sets[k].done) Object.assign(e.sets[k], patch);
+    });
+  };
+
+  const completeSet = () => {
+    if (!cur || !curSet) return;
     unlockAudio();
-    const willBeDone = !en.sets[si].done;
-    update((s) => { const e = s.entries.find((x) => x.uid === en.uid)!; e.sets[si].done = willBeDone; e.sets[si].at = Date.now(); });
-    if (!willBeDone) return;
+    if (curSet.done) { setSelSet(null); toast('Zapisano zmianę'); return; }
+    update((s) => { const e = s.entries.find((x) => x.uid === cur.uid)!; e.sets[setIdx].done = true; e.sets[setIdx].at = Date.now(); });
+    setSelSet(null);
     const s = useStore.getState().active!;
-    const e = s.entries.find((x) => x.uid === en.uid)!;
+    const e = s.entries.find((x) => x.uid === cur.uid)!;
     const name = getExercise(e.exId).name;
-    // superseria: przejdź do partnera bez przerwy
+
     if (e.superset) {
       const group = s.entries.filter((x) => x.superset === e.superset);
       const gi = group.findIndex((x) => x.uid === e.uid);
       const partner = [...group.slice(gi + 1), ...group.slice(0, gi)].find((x) => x.sets.some((q) => !q.done));
-      if (partner && gi < group.length - 1) {
-        clearRest(); setFocus(partner.uid); toast(`Superseria → ${getExercise(partner.exId).name}`); return;
-      }
+      if (partner && gi < group.length - 1) { clearRest(); setFocus(partner.uid); toast(`Superseria → ${getExercise(partner.exId).name}`); return; }
       if (partner) {
         setFocus(partner.uid);
-        startRest({ total: e.restSec, label: `Superseria ${e.superset.toUpperCase()} – runda zakończona`, next: getExercise(partner.exId).name });
+        const pi = partner.sets.findIndex((q) => !q.done);
+        startRest({ total: e.restSec, label: `Superseria ${e.superset.toUpperCase()}: runda zakończona`, next: getExercise(partner.exId).name, nextExId: partner.exId, nextDetail: detailOf(partner, pi) });
         return;
       }
     }
     const remaining = e.sets.filter((x) => !x.done).length;
     if (remaining > 0) {
-      const n = e.sets.findIndex((x) => !x.done) + 1;
-      startRest({ total: e.restSec, label: `${name} · seria ${si + 1} zrobiona`, next: `seria ${n} z ${e.sets.length}` });
+      const ni = e.sets.findIndex((x) => !x.done);
+      startRest({ total: e.restSec, label: `Seria ${setIdx + 1} zrobiona`, next: name, nextExId: e.exId, nextDetail: detailOf(e, ni) });
     } else {
       const nx = nextOpenAfter(s, e.uid);
       if (nx) {
         setFocus(nx.uid);
-        startRest({ total: Math.max(e.restSec, 90), label: `✓ Koniec ćwiczenia: ${name}`, next: getExercise(nx.exId).name, betweenExercises: true });
-      } else {
-        clearRest(); toast('Wszystkie serie zrobione! Zakończ trening 🎉');
-      }
+        const ni = nx.sets.findIndex((x) => !x.done);
+        startRest({ total: Math.max(e.restSec, 90), label: 'Ćwiczenie ukończone', doneExId: e.exId, next: getExercise(nx.exId).name, nextExId: nx.exId, nextDetail: detailOf(nx, ni), betweenExercises: true });
+      } else { clearRest(); setEnding(true); }
     }
   };
 
-  const finishExercise = (en: EntryLog) => {
+  const finishExercise = () => {
+    if (!cur) return;
     unlockAudio();
-    update((s) => { const e = s.entries.find((x) => x.uid === en.uid)!; e.sets = e.sets.filter((x) => x.done); });
+    update((s) => { const e = s.entries.find((x) => x.uid === cur.uid)!; e.sets = e.sets.filter((x) => x.done); });
+    setSelSet(null);
     const s = useStore.getState().active!;
-    const nx = nextOpenAfter(s, en.uid);
+    const nx = nextOpenAfter(s, cur.uid);
     if (nx) {
       setFocus(nx.uid);
-      startRest({ total: Math.max(en.restSec, 90), label: `✓ Koniec ćwiczenia: ${getExercise(en.exId).name}`, next: getExercise(nx.exId).name, betweenExercises: true });
-    } else toast('To było ostatnie ćwiczenie');
+      const ni = nx.sets.findIndex((x) => !x.done);
+      startRest({ total: Math.max(cur.restSec, 90), label: 'Ćwiczenie ukończone', doneExId: cur.exId, next: getExercise(nx.exId).name, nextExId: nx.exId, nextDetail: detailOf(nx, ni), betweenExercises: true });
+    } else setEnding(true);
   };
 
-  const setVal = (en: EntryLog, si: number, patch: Partial<EntryLog['sets'][0]>, propagate = false) => update((s) => {
-    const e = s.entries.find((x) => x.uid === en.uid)!;
-    Object.assign(e.sets[si], patch);
-    // zmiana ciężaru w pierwszej niewykonanej serii → przenieś na kolejne niewykonane
-    if (propagate) for (let k = si + 1; k < e.sets.length; k++) if (!e.sets[k].done) Object.assign(e.sets[k], patch);
-  });
+  const jump = (uidTo: string) => { clearRest(); setFocus(uidTo); setSelSet(null); setOverview(false); };
 
-  const elapsed = now - active.startedAt;
+  const doneEntry = rest?.doneExId ? entries.find((e) => e.exId === rest.doneExId) : undefined;
+  const over = rest ? left <= 0 : false;
 
   return (
-    <div className="screen" style={{ paddingBottom: rest ? 220 : 60 }}>
-      <div className="topbar">
-        <button className="iconbtn" onClick={pop} aria-label="Zminimalizuj"><Icon name="down" /></button>
-        <div className="grow">
-          <div className="bold ellipsis">{active.workoutName}</div>
-          <div className="xs muted num">{fmtClock(elapsed / 1000)} · {doneSets}/{totalSets} serii · {bigFmt(sessionVolume(active))}</div>
+    <div className="player">
+      <div className="player-top">
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <div className="row" style={{ marginBottom: 12 }}>
+            <button className="iconbtn" onClick={pop} aria-label="Zminimalizuj"><Icon name="down" /></button>
+            <div className="grow center">
+              <div className="bold ellipsis" style={{ fontFamily: 'var(--display)', fontSize: 17 }}>{active.workoutName}</div>
+              <div className="xs muted num">{fmtClock(elapsed / 1000)} · {doneSets}/{totalSets} serii · {bigFmt(sessionVolume(active))}</div>
+            </div>
+            <button className="iconbtn" onClick={() => setOverview(true)} aria-label="Lista ćwiczeń"><Icon name="list" /></button>
+          </div>
+          <div className="segs">
+            {entries.map((e, i) => (
+              <i key={e.uid} className={i === curIdxEntry ? 'cur' : ''} onClick={() => jump(e.uid)}>
+                <b style={{ width: `${e.sets.length ? (e.sets.filter((s) => s.done).length / e.sets.length) * 100 : 0}%` }} />
+              </i>
+            ))}
+          </div>
         </div>
-        <button className="btn sm primary" onClick={() => setEnding(true)}>Zakończ</button>
       </div>
-      <div className="progressbar"><i style={{ width: `${totalSets ? (doneSets / totalSets) * 100 : 0}%` }} /></div>
 
-      <div className="stack mt16">
-        {active.entries.map((en, idx) => {
-          const ex = getExercise(en.exId);
-          const isCur = en.uid === cur;
-          const allDone = en.sets.length > 0 && en.sets.every((s) => s.done);
-          const last = historyFor(en.exId, sessions)[0];
-          const pe = en.plan;
-          const sg = pe ? suggest({ uid: '', exId: en.exId, sets: pe.sets, repMin: pe.repMin, repMax: pe.repMax, rir: pe.rir, restSec: pe.restSec }, ex, sessions) : null;
-          const prevSS = idx > 0 && en.superset && active.entries[idx - 1].superset === en.superset;
-          return (
-            <div key={en.uid}>
-              {en.superset && !prevSS && <div className="tag violet" style={{ marginBottom: 6 }}>superseria {en.superset.toUpperCase()}</div>}
-              <div className={`card excard ${isCur ? 'current' : ''} ${allDone && !isCur ? 'finished' : ''} ${en.superset ? 'ss' : ''}`}>
-                <div className="row" onClick={() => setFocus(en.uid)}>
-                  <div className="badge" style={allDone ? { background: 'var(--accent)', color: 'var(--accent-ink)' } : undefined}>{allDone ? <Icon name="check" size={16} stroke={3} /> : idx + 1}</div>
+      <AnimatePresence mode="wait" initial={false}>
+        {rest ? (
+          <motion.div key="rest" className="player-body" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.2 }}>
+            <div className="restwrap">
+              {rest.betweenExercises && (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12, stiffness: 260 }} style={{ width: 58, height: 58, borderRadius: 20, background: 'var(--accent)', color: 'var(--accent-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="check" size={32} stroke={3} />
+                </motion.div>
+              )}
+              <div className="bold" style={{ fontFamily: 'var(--display)', fontSize: 20, color: rest.betweenExercises ? 'var(--accent)' : undefined }}>{over ? 'Czas minął. Zaczynaj!' : rest.label}</div>
+              {doneEntry && <div className="chips wrap" style={{ justifyContent: 'center' }}>{workSets(doneEntry).map((s, i) => <span key={i} className="tag accent">{kgFmt(s.kg)} × {s.reps}</span>)}</div>}
+              <Ring value={over ? 1 : 1 - left / rest.total} size={216} stroke={12} color={over ? 'var(--accent)' : 'var(--violet)'}>
+                <div className="bigtime" style={{ color: over ? 'var(--accent)' : undefined }}>{over ? `+${fmtClock(-left)}` : fmtClock(left)}</div>
+                <div className="xs muted mt8">{over ? 'ponad plan' : 'przerwa'}</div>
+              </Ring>
+              {rest.next && (
+                <div className="nextcard">
+                  {rest.nextExId && <ExImg id={rest.nextExId} size="sq" />}
                   <div className="grow">
-                    <div className="bold">{ex.name}</div>
-                    <div className="xs muted">
-                      {pe ? `${pe.repMin}–${pe.repMax} powt. · RIR ${pe.rir} · przerwa ${fmtClock(en.restSec)}` : `przerwa ${fmtClock(en.restSec)}`}
-                    </div>
+                    <div className="xs muted bold" style={{ letterSpacing: '.07em', textTransform: 'uppercase' }}>{rest.betweenExercises ? 'Następne ćwiczenie' : 'Następna seria'}</div>
+                    <div className="bold" style={{ lineHeight: 1.25, marginTop: 2 }}>{rest.next}</div>
+                    {rest.nextDetail && <div className="small muted mt8" style={{ marginTop: 3 }}>{rest.nextDetail}</div>}
                   </div>
-                  <button className="iconbtn plain" onClick={(e) => { e.stopPropagation(); setMenu(en.uid); }}><Icon name="more" size={22} stroke={3} /></button>
                 </div>
-
-                {(isCur || !allDone) && (
-                  <>
-                    {isCur && sg && last && <div className={`hint mt12 ${sg.kind === 'up' ? 'up' : sg.kind === 'deload' ? 'deload' : ''}`}>{sg.kind === 'up' ? '▲ ' : ''}{sg.reason}</div>}
-                    {isCur && sg && !last && <div className="hint mt12">{sg.reason}</div>}
-                    {last && <div className="xs muted mt8">Ostatnio ({last.s.date.slice(5).split('-').reverse().join('.')}): {workSets(last.en).map((s) => `${kgFmt(s.kg)}×${s.reps}`).join(', ')}</div>}
-                    <div className="setgrid mt12">
-                      <div className="h">#</div><div className="h">{ex.bodyweight ? 'kg +' : 'kg'}</div><div className="h">{ex.name.includes('sekundy') ? 'sek.' : ex.name.includes('metry') ? 'metry' : 'powt.'}</div><div className="h">RIR</div><div className="h" />
-                      {en.sets.map((s, si) => (
-                        <div key={si} className={`setrow ${s.done ? 'done' : ''}`} style={{ display: 'contents' }}>
-                          <div className="setno">{si + 1}</div>
-                          <NumInput value={s.kg} onChange={(v) => setVal(en, si, { kg: v }, !s.done)} />
-                          <NumInput value={s.reps} decimal={false} onChange={(v) => setVal(en, si, { reps: v })} />
-                          <select className="setin sel" value={s.rir ?? ''} onChange={(e) => setVal(en, si, { rir: e.target.value === '' ? undefined : Number(e.target.value) })}>
-                            <option value="">–</option>{[0, 1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>{r}</option>)}
-                          </select>
-                          <button className={`check ${s.done ? 'on' : ''}`} onClick={() => toggleSet(en, si)} aria-label="Seria zrobiona"><Icon name="check" stroke={3} /></button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="row mt12">
-                      <button className="btn sm" onClick={() => update((s) => { const e = s.entries.find((x) => x.uid === en.uid)!; const l = e.sets[e.sets.length - 1]; e.sets.push({ kg: l?.kg ?? 0, reps: l?.reps ?? 8, rir: l?.rir, done: false }); })}><Icon name="plus" size={16} /> Seria</button>
-                      {en.sets.length > 1 && <button className="btn sm" onClick={() => update((s) => { const e = s.entries.find((x) => x.uid === en.uid)!; e.sets.pop(); })}><Icon name="minus" size={16} /></button>}
-                      <div className="grow" />
-                      {isCur && !allDone && en.sets.some((s) => s.done) && <button className="btn sm violet" onClick={() => finishExercise(en)}>Zakończ ćwiczenie</button>}
-                    </div>
-                  </>
-                )}
+              )}
+              <div className="grid2" style={{ width: '100%' }}>
+                <button className="btn" onClick={() => adjustRest(-15)}>−15 s</button>
+                <button className="btn" onClick={() => adjustRest(15)}>+15 s</button>
               </div>
             </div>
-          );
-        })}
+          </motion.div>
+        ) : cur && ex && curSet ? (
+          <motion.div key={`work-${cur.uid}`} className="player-body" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.22 }}>
+            <div className="stack" style={{ gap: 14 }}>
+              <div style={{ position: 'relative' }}>
+                <ExImg id={cur.exId} size="hero16" animate />
+                <span className="tag" style={{ position: 'absolute', left: 10, top: 10, background: 'rgba(11,12,15,.72)', color: '#fff', backdropFilter: 'blur(6px)' }}>Ćwiczenie {curIdxEntry + 1}/{entries.length}</span>
+                {cur.superset && <span className="tag violet" style={{ position: 'absolute', right: 10, top: 10 }}>superseria {cur.superset.toUpperCase()}</span>}
+              </div>
+              <div className="pname">{ex.name}</div>
+              <div className="metaline">
+                <span className="tag accent">Seria {setIdx + 1} z {cur.sets.length}</span>
+                {pe && <span className="tag">{pe.repMin === pe.repMax ? pe.repMin : `${pe.repMin}–${pe.repMax}`} {unit.l === 'Powtórzenia' ? 'powt.' : unit.l.toLowerCase()}</span>}
+                {pe && <span className="tag">RIR {pe.rir}</span>}
+                <span className="tag">przerwa {fmtClock(cur.restSec)}</span>
+              </div>
+              {!curSet.done && sg && <div className={`hint ${sg.kind === 'up' ? 'up' : sg.kind === 'deload' ? 'deload' : ''}`}>{sg.kind === 'up' ? '▲ ' : ''}{sg.reason}</div>}
+              {last && <div className="xs muted center">Ostatnio ({last.s.date.slice(5).split('-').reverse().join('.')}): {workSets(last.en).map((s) => `${kgFmt(s.kg)}×${s.reps}`).join(' · ')}</div>}
+
+              <div className="grid2">
+                <div className="stepcard">
+                  <div className="lab">{ex.bodyweight ? 'Dodatkowe kg' : 'Ciężar (kg)'}</div>
+                  <div className="val">
+                    <button className="stepbtn" onClick={() => setVal({ kg: Math.max(0, +(curSet.kg - (ex.step || 2.5)).toFixed(2)) }, !curSet.done)} aria-label="mniej"><Icon name="minus" /></button>
+                    <button className="stepbtn" onClick={() => setVal({ kg: +(curSet.kg + (ex.step || 2.5)).toFixed(2) }, !curSet.done)} aria-label="więcej"><Icon name="plus" /></button>
+                  </div>
+                  <NumInput className="big" value={curSet.kg} onChange={(v) => setVal({ kg: v }, !curSet.done)} />
+                </div>
+                <div className="stepcard">
+                  <div className="lab">{unit.l}</div>
+                  <div className="val">
+                    <button className="stepbtn" onClick={() => setVal({ reps: Math.max(0, curSet.reps - unit.step) })} aria-label="mniej"><Icon name="minus" /></button>
+                    <button className="stepbtn" onClick={() => setVal({ reps: curSet.reps + unit.step })} aria-label="więcej"><Icon name="plus" /></button>
+                  </div>
+                  <NumInput className="big" decimal={false} value={curSet.reps} onChange={(v) => setVal({ reps: v })} />
+                </div>
+              </div>
+
+              <div>
+                <div className="xs muted bold center" style={{ letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 8 }}>Ile powtórzeń zostało w zapasie (RIR)</div>
+                <div className="rirrow">
+                  {[0, 1, 2, 3, 4].map((r) => <button key={r} className={curSet.rir === r ? 'on' : ''} onClick={() => setVal({ rir: curSet.rir === r ? undefined : r })}>{r === 4 ? '4+' : r}</button>)}
+                </div>
+              </div>
+
+              <div className="pills">
+                {cur.sets.map((s, i) => (
+                  <button key={i} className={`pill-set ${s.done ? 'done' : ''} ${i === setIdx ? 'cur' : ''}`} onClick={() => setSelSet(i)}>
+                    {s.done ? <span className="pop"><Icon name="check" size={18} stroke={3} /></span> : i + 1}
+                  </button>
+                ))}
+                <button className="pill-set" aria-label="Dodaj serię" onClick={() => { update((s) => { const e = s.entries.find((x) => x.uid === cur.uid)!; const l = e.sets[e.sets.length - 1]; e.sets.push({ kg: l?.kg ?? 0, reps: l?.reps ?? 8, rir: l?.rir, done: false }); }); setSelSet(cur.sets.length); }}><Icon name="plus" size={18} /></button>
+              </div>
+
+              <div className="grid2">
+                <button className="btn sm ghost" disabled={!cur.sets.some((s) => s.done) || cur.sets.every((s) => s.done)} onClick={finishExercise}>Zakończ ćwiczenie</button>
+                <button className="btn sm ghost" onClick={() => setMenu(cur.uid)}>Więcej opcji</button>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div key="empty" className="player-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="empty">Dodaj pierwsze ćwiczenie, aby zacząć.</div>
+            <button className="btn primary block" onClick={() => setPicker({})}><Icon name="plus" size={18} /> Dodaj ćwiczenie</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="player-cta">
+        {rest ? (
+          <button className={`btn lg block ${over ? 'primary shine' : 'violet'}`} onClick={() => { unlockAudio(); clearRest(); }}>{over ? 'Zaczynam' : 'Pomiń przerwę'} <Icon name="right" /></button>
+        ) : cur && curSet ? (
+          <button className="btn lg primary block shine" onClick={completeSet}>
+            <Icon name="check" stroke={3} /> {curSet.done ? 'Zapisz zmianę' : 'Seria zrobiona'}
+          </button>
+        ) : (
+          <button className="btn lg block" onClick={() => setEnding(true)}>Zakończ trening</button>
+        )}
       </div>
 
-      <button className="btn ghost block mt16" onClick={() => setPicker({})}><Icon name="plus" size={18} /> Dodaj ćwiczenie</button>
-      <button className="btn ghost block mt8 danger" style={{ borderColor: 'transparent' }} onClick={() => { if (confirm('Odrzucić ten trening? Nic nie zostanie zapisane.')) { discard(); pop(); } }}>Odrzuć trening</button>
+      {/* lista ćwiczeń */}
+      <Sheet open={overview} onClose={() => setOverview(false)} title="Plan treningu">
+        <div>
+          {entries.map((e, i) => {
+            const ee = getExercise(e.exId); const d = e.sets.filter((s) => s.done).length;
+            return (
+              <div key={e.uid} className={`item ${e.superset ? 'ss' : ''}`}>
+                <button className="row grow" style={{ textAlign: 'left' }} onClick={() => jump(e.uid)}>
+                  <ExImg id={e.exId} size="sq" />
+                  <div className="grow">
+                    <div className="t ellipsis">{i + 1}. {ee.name}</div>
+                    <div className="s">{d}/{e.sets.length} serii{e.uid === cur?.uid ? ' · teraz' : ''}</div>
+                  </div>
+                  {d === e.sets.length && e.sets.length > 0 && <span className="accent"><Icon name="check" stroke={3} /></span>}
+                </button>
+                <button className="iconbtn plain" onClick={() => { setOverview(false); setMenu(e.uid); }}><Icon name="more" size={20} stroke={3} /></button>
+              </div>
+            );
+          })}
+        </div>
+        <button className="btn block mt12" onClick={() => { setOverview(false); setPicker({}); }}><Icon name="plus" size={18} /> Dodaj ćwiczenie</button>
+        <button className="btn danger block mt12" onClick={() => { if (confirm('Odrzucić ten trening? Nic nie zostanie zapisane.')) { discard(); setOverview(false); pop(); } }}>Odrzuć trening</button>
+      </Sheet>
 
-      <RestBar />
-
-      <Sheet open={!!menu} onClose={() => setMenu(null)} title={menu ? getExercise(active.entries.find((e) => e.uid === menu)?.exId ?? '').name : ''}>
+      <Sheet open={!!menu} onClose={() => setMenu(null)} title={menu ? getExercise(entries.find((e) => e.uid === menu)?.exId ?? '').name : ''}>
         {menu && (() => {
-          const i = active.entries.findIndex((e) => e.uid === menu);
-          const en = active.entries[i];
-          const restOpts = [45, 60, 90, 120, 150, 180, 240];
+          const i = entries.findIndex((e) => e.uid === menu);
+          const en = entries[i];
+          if (!en) return null;
           return (
             <div className="stack">
-              <div className="small muted">Przerwa między seriami</div>
-              <div className="chips">{restOpts.map((r) => <button key={r} className={`chip ${en.restSec === r ? 'on' : ''}`} onClick={() => update((s) => { s.entries[i].restSec = r; })}>{fmtClock(r)}</button>)}</div>
-              <div className="grid2 mt8">
+              <div className="small muted center">Przerwa między seriami</div>
+              <div className="chips wrap" style={{ justifyContent: 'center' }}>{[45, 60, 90, 120, 150, 180, 240].map((r) => <button key={r} className={`chip ${en.restSec === r ? 'on' : ''}`} onClick={() => update((s) => { s.entries[i].restSec = r; })}>{fmtClock(r)}</button>)}</div>
+              <div className="grid2">
                 <button className="btn" disabled={i === 0} onClick={() => update((s) => { [s.entries[i - 1], s.entries[i]] = [s.entries[i], s.entries[i - 1]]; })}><Icon name="up" size={18} /> Wyżej</button>
-                <button className="btn" disabled={i === active.entries.length - 1} onClick={() => update((s) => { [s.entries[i + 1], s.entries[i]] = [s.entries[i], s.entries[i + 1]]; })}><Icon name="down" size={18} /> Niżej</button>
+                <button className="btn" disabled={i === entries.length - 1} onClick={() => update((s) => { [s.entries[i + 1], s.entries[i]] = [s.entries[i], s.entries[i + 1]]; })}><Icon name="down" size={18} /> Niżej</button>
               </div>
+              <button className="btn block" disabled={en.sets.length < 2} onClick={() => update((s) => { s.entries[i].sets.pop(); setSelSet(null); })}><Icon name="minus" size={18} /> Usuń ostatnią serię</button>
               <button className="btn block" onClick={() => { setMenu(null); setPicker({ swap: menu }); }}><Icon name="swap" size={18} /> Zamień ćwiczenie</button>
               <button className="btn block" onClick={() => { setMenu(null); push({ name: 'exercise', id: en.exId }); }}><Icon name="chart" size={18} /> Historia i wykres</button>
-              <button className="btn block danger" onClick={() => { update((s) => { s.entries.splice(i, 1); }); setMenu(null); }}><Icon name="trash" size={18} /> Usuń z treningu</button>
+              <button className="btn block danger" onClick={() => { update((s) => { s.entries.splice(i, 1); }); setMenu(null); setFocus(null); }}><Icon name="trash" size={18} /> Usuń z treningu</button>
             </div>
           );
         })()}
       </Sheet>
 
       <ExercisePicker open={!!picker} onClose={() => setPicker(null)} title={picker?.swap ? 'Zamień ćwiczenie' : 'Dodaj ćwiczenie'} onPick={(id) => update((s) => {
-        const ex = getExercise(id);
+        const e2 = getExercise(id);
         if (picker?.swap) { const e = s.entries.find((x) => x.uid === picker.swap); if (e) { e.exId = id; e.sets.forEach((x) => { if (!x.done) x.kg = 0; }); } return; }
-        const last = historyFor(id, sessions)[0];
-        const ls = last ? workSets(last.en) : [];
-        s.entries.push({ uid: uid(), exId: id, restSec: ex.compound ? 150 : 75, sets: Array.from({ length: 3 }, (_, k) => ({ kg: ls[k]?.kg ?? ls[0]?.kg ?? 0, reps: ls[k]?.reps ?? (ex.compound ? 8 : 12), done: false })) });
+        const l = historyFor(id, sessions)[0];
+        const ls = l ? workSets(l.en) : [];
+        const nu = uid();
+        s.entries.push({ uid: nu, exId: id, restSec: e2.compound ? 150 : 75, sets: Array.from({ length: 3 }, (_, k) => ({ kg: ls[k]?.kg ?? ls[0]?.kg ?? 0, reps: ls[k]?.reps ?? (e2.compound ? 8 : 12), done: false })) });
+        setFocus(nu);
       })} />
 
-      {ending && <FinishSheet onClose={() => setEnding(false)} onSave={(feel, note) => {
+      {ending && <FinishSheet allDone={!entries.some((e) => e.sets.some((s) => !s.done))} onClose={() => setEnding(false)} onSave={(feel, note) => {
         const fin = finish(feel, note);
         setEnding(false); pop();
         if (fin) { const prs = findPRs(fin, useStore.getState().data.sessions); toast(prs.length ? `Zapisano! Nowe rekordy: ${prs.length} 🏆` : 'Trening zapisany ✓'); push({ name: 'session', id: fin.id }); }
@@ -269,31 +396,37 @@ export function Workout() {
   );
 }
 
-function FinishSheet({ onClose, onSave }: { onClose: () => void; onSave: (feel?: number, note?: string) => void }) {
+function FinishSheet({ onClose, onSave, allDone }: { onClose: () => void; onSave: (feel?: number, note?: string) => void; allDone: boolean }) {
   const active = useStore((s) => s.active)!;
   const sessions = useStore((s) => s.data.sessions);
   const [feel, setFeel] = useState<number | undefined>();
   const [note, setNote] = useState('');
   const prs = useMemo(() => findPRs({ ...active, finishedAt: Date.now() }, sessions), [active, sessions]);
   const undone = active.entries.reduce((a, e) => a + e.sets.filter((s) => !s.done).length, 0);
+  useEffect(() => {
+    if (!allDone && !prs.length) return;
+    const fire = (x: number) => confetti({ particleCount: 70, spread: 80, startVelocity: 38, origin: { x, y: 0.75 }, colors: ['#c8f560', '#8b7bff', '#ffffff'], zIndex: 200 });
+    fire(0.2); setTimeout(() => fire(0.8), 150);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
-    <Sheet open onClose={onClose} title="Podsumowanie">
+    <Sheet open onClose={onClose} title={allDone ? 'Trening ukończony! 🎉' : 'Podsumowanie'}>
       <div className="grid3">
-        <div className="card2 stat"><b style={{ fontSize: 18 }}>{fmtDuration(Date.now() - active.startedAt)}</b><span>czas</span></div>
-        <div className="card2 stat"><b style={{ fontSize: 18 }}>{bigFmt(sessionVolume(active))}</b><span>objętość</span></div>
-        <div className="card2 stat"><b style={{ fontSize: 18 }}>{sessionSets(active)}</b><span>serie</span></div>
+        <div className="card2 stat" style={{ minHeight: 80 }}><b style={{ fontSize: 20 }}>{fmtDuration(Date.now() - active.startedAt)}</b><span>czas</span></div>
+        <div className="card2 stat" style={{ minHeight: 80 }}><b style={{ fontSize: 20 }}>{bigFmt(sessionVolume(active))}</b><span>objętość</span></div>
+        <div className="card2 stat" style={{ minHeight: 80 }}><b style={{ fontSize: 20 }}>{sessionSets(active)}</b><span>serie</span></div>
       </div>
       {prs.length > 0 && (
         <div className="card2 mt12">
-          <div className="bold row"><span className="accent"><Icon name="trophy" size={18} /></span> Nowe rekordy</div>
-          {prs.map((p) => <div key={p.exId} className="small mt8">{getExercise(p.exId).name}: <b className="accent">{p.type === 'kg' ? `${kgFmt(p.value)} kg` : `e1RM ${kgFmt(p.value)} kg`}</b> <span className="muted">(było {kgFmt(p.prev)})</span></div>)}
+          <div className="bold row" style={{ justifyContent: 'center' }}><span className="accent"><Icon name="trophy" size={18} /></span> Nowe rekordy</div>
+          {prs.map((p) => <div key={p.exId} className="small mt8 center">{getExercise(p.exId).name}: <b className="accent">{p.type === 'kg' ? `${kgFmt(p.value)} kg` : `e1RM ${kgFmt(p.value)} kg`}</b> <span className="muted">(było {kgFmt(p.prev)})</span></div>)}
         </div>
       )}
-      {undone > 0 && <div className="xs muted mt12">Niezaznaczone serie ({undone}) nie zostaną zapisane.</div>}
-      <div className="small muted mt16">Jak się czułeś?</div>
-      <div className="row mt8">{['😫', '😕', '😐', '🙂', '💪'].map((e, i) => <button key={i} className={`chip ${feel === i + 1 ? 'on' : ''}`} style={{ fontSize: 20, height: 44, flex: 1, justifyContent: 'center' }} onClick={() => setFeel(i + 1)}>{e}</button>)}</div>
-      <textarea className="input mt12" placeholder="Notatka (opcjonalnie)" value={note} onChange={(e) => setNote(e.target.value)} />
-      <button className="btn primary block mt16" onClick={() => onSave(feel, note || undefined)}>Zapisz trening</button>
+      {undone > 0 && <div className="xs muted mt12 center">Niezaznaczone serie ({undone}) nie zostaną zapisane.</div>}
+      <div className="small muted mt16 center">Jak się czułeś?</div>
+      <div className="grid3 mt8" style={{ gridTemplateColumns: 'repeat(5, minmax(0,1fr))' }}>{['😫', '😕', '😐', '🙂', '💪'].map((e, i) => <button key={i} className={`chip ${feel === i + 1 ? 'on' : ''}`} style={{ fontSize: 22, height: 48, borderRadius: 14 }} onClick={() => setFeel(i + 1)}>{e}</button>)}</div>
+      <textarea className="input left mt12" placeholder="Notatka (opcjonalnie)" value={note} onChange={(e) => setNote(e.target.value)} />
+      <button className="btn lg primary block mt16" onClick={() => onSave(feel, note || undefined)}>Zapisz trening</button>
       <button className="btn ghost block mt8" onClick={onClose}>Wróć do treningu</button>
     </Sheet>
   );

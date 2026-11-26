@@ -43,3 +43,8 @@ create table public.user_data (
 alter table public.user_data enable row level security;
 -- polityki: każdy użytkownik widzi i zmienia tylko swój wiersz (auth.uid() = user_id)
 ```
+
+## Źródła grafik i czcionek
+- Zdjęcia ćwiczeń: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (Unlicense / domena publiczna), przekonwertowane do WebP (`public/img/ex`, patrz `CREDITS.txt`).
+- Czcionki Inter i Space Grotesk (SIL OFL), hostowane lokalnie.
+- Ikony: lucide (ISC), animacje: motion, konfetti: canvas-confetti.

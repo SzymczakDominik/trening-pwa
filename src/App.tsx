@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { useNav, type Tab, type View } from './nav';
 import { useStore } from './lib/store';
 import { useAuthSync } from './lib/sync';
@@ -42,7 +43,7 @@ export default function App() {
   const sync = useAuthSync();
   const onboarded = useStore((s) => s.onboarded);
   const hasProgram = useStore((s) => !!s.data.program);
-  const hasActive = useStore((s) => !!s.active);
+  const hasRest = useStore((s) => !!s.rest);
   const top = stack[stack.length - 1];
 
   useEffect(() => {
@@ -50,42 +51,46 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // przycisk „wstecz” (gest w PWA / Android) zamyka nakładkę
-  useEffect(() => {
-    const onPop = () => { if (useNav.getState().stack.length) useNav.getState().pop(); };
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
-
   return (
     <div className="app">
-      {tab === 'today' && <Today />}
-      {tab === 'plan' && <PlanScreen />}
-      {tab === 'calendar' && <CalendarScreen />}
-      {tab === 'progress' && <ProgressScreen />}
-      {tab === 'more' && <MoreScreen sync={sync} />}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
+          {tab === 'today' && <Today />}
+          {tab === 'plan' && <PlanScreen />}
+          {tab === 'calendar' && <CalendarScreen />}
+          {tab === 'progress' && <ProgressScreen />}
+          {tab === 'more' && <MoreScreen sync={sync} />}
+        </motion.div>
+      </AnimatePresence>
 
       {!top && (
-        <nav className="tabbar">
-          {TABS.map((x) => (
-            <button key={x.t} className={tab === x.t ? 'on' : ''} onClick={() => setTab(x.t)}>
-              <Icon name={x.icon} size={22} />{x.l}
-            </button>
-          ))}
-        </nav>
+        <LayoutGroup>
+          <nav className="tabbar">
+            {TABS.map((x) => (
+              <button key={x.t} className={tab === x.t ? 'on' : ''} onClick={() => setTab(x.t)}>
+                {tab === x.t && <motion.span layoutId="tabbubble" className="bubble" transition={{ type: 'spring', damping: 28, stiffness: 420 }} />}
+                <Icon name={x.icon} size={22} />{x.l}
+              </button>
+            ))}
+          </nav>
+        </LayoutGroup>
       )}
       {/* przerwa widoczna także poza ekranem treningu */}
-      {!top && hasActive && <RestBarWrap />}
+      {top?.name !== 'workout' && hasRest && <RestBar />}
 
-      {stack.map((v, i) => (
-        <div key={i} className="overlay" style={{ display: i === stack.length - 1 ? 'block' : 'none' }}>{renderView(v, sync)}</div>
-      ))}
+      <AnimatePresence>
+        {stack.map((v, i) => (
+          <motion.div
+            key={`${i}-${v.name}`} className="overlay"
+            style={{ display: i === stack.length - 1 ? 'block' : 'none' }}
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: 'tween', ease: [0.22, 0.9, 0.3, 1], duration: 0.3 }}
+          >
+            {renderView(v, sync)}
+          </motion.div>
+        ))}
+      </AnimatePresence>
       <Toaster />
     </div>
   );
-}
-
-function RestBarWrap() {
-  const rest = useStore((s) => s.rest);
-  return rest ? <RestBar aboveTabs /> : null;
 }

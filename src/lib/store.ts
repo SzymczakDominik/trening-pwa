@@ -9,7 +9,10 @@ export interface RestTimer {
   total: number;
   label: string;      // co się właśnie skończyło
   next?: string;      // co dalej
+  nextExId?: string;  // ćwiczenie, dla którego pokazujemy ilustrację
+  nextDetail?: string; // np. „Seria 2 z 4 · 8–12 powt.”
   betweenExercises?: boolean;
+  doneExId?: string;  // ćwiczenie, które właśnie skończono
 }
 
 export const defaultProfile: Profile = { sex: 'm', level: 'początkujący', goal: 'sylwetka', unitStepKg: 2.5, sound: true };

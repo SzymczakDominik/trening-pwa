@@ -4,6 +4,7 @@ import { useNav } from '../nav';
 import { addDays, DAY_SHORT, fmtDate, fmtShort, mondayOf, programPosition, todayStr } from '../lib/calc';
 import { getExercise } from '../data/exercises';
 import { Icon, Sheet, toast } from '../components/ui';
+import { ExImg } from '../components/ExImg';
 import type { Program, WorkoutTemplate } from '../types';
 
 export function WeeksBar({ p }: { p: Program }) {
@@ -45,11 +46,11 @@ export function WorkoutList({ workouts, rirShift = 0, deload = false, onEdit }: 
                 return (
                   <div key={e.uid}>
                     {e.superset && !prevSS && <div className="tag violet mt8">superseria</div>}
-                    <div className={`exrow ${e.superset ? 'ss' : ''}`}>
-                      <div className="badge">{i + 1}</div>
+                    <div className={`item ${e.superset ? 'ss' : ''}`}>
+                      <ExImg id={e.exId} size="sq" />
                       <div className="grow">
-                        <div>{getExercise(e.exId).name}</div>
-                        <div className="xs muted">
+                        <div className="t">{getExercise(e.exId).name}</div>
+                        <div className="s">
                           {deload ? Math.max(1, Math.round(e.sets * 0.6)) : e.sets} × {e.repMin === e.repMax ? e.repMin : `${e.repMin}–${e.repMax}`} · RIR {Math.max(0, e.rir + rirShift)} · przerwa {e.restSec >= 60 ? `${Math.round(e.restSec / 6) / 10} min` : `${e.restSec} s`}{e.kg ? ` · ${e.kg} kg` : ''}
                         </div>
                       </div>
