@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore, liveSessions } from '../lib/store';
 import { useNav } from '../nav';
 import { getExercise, MUSCLES } from '../data/exercises';
@@ -6,6 +6,7 @@ import { addDays, bestE1rm, e1rm, findPRs, fmtDate, fmtDuration, fmtShort, histo
 import { BarChart, LineChart } from '../components/charts';
 import { Icon, NumInput, Seg, TopBar, bigFmt, kgFmt, toast } from '../components/ui';
 import { ExImg } from '../components/ExImg';
+import { stravaStatus, sendSessionToStrava } from '../lib/strava';
 import type { Session } from '../types';
 
 type PTab = 'overview' | 'exercises' | 'body';
@@ -197,6 +198,21 @@ export function ExerciseDetail({ id }: { id: string }) {
   );
 }
 
+function StravaSendButton({ id, sent }: { id: string; sent: boolean }) {
+  const [st, setSt] = useState<'idle' | 'busy'>('idle');
+  const [connected, setConnected] = useState<boolean | null>(null);
+  useEffect(() => { if (!sent) stravaStatus().then((r) => setConnected(r.connected)).catch(() => setConnected(false)); }, [sent]);
+  if (sent) return <div className="card small mt12 row"><span className="accent"><Icon name="check" size={18} /></span> Wysłano do Stravy</div>;
+  if (!connected) return null;
+  return (
+    <button className="btn block mt12" disabled={st === 'busy'} onClick={async () => {
+      setSt('busy');
+      try { await sendSessionToStrava(id); toast('Wysłano do Stravy ✓'); } catch (e) { toast((e as Error).message); }
+      setSt('idle');
+    }}><Icon name="activity" size={18} /> {st === 'busy' ? 'Wysyłam…' : 'Wyślij do Stravy'}</button>
+  );
+}
+
 export function SessionDetail({ id }: { id: string }) {
   const data = useStore((s) => s.data);
   const del = useStore((s) => s.deleteSession);
@@ -225,6 +241,7 @@ export function SessionDetail({ id }: { id: string }) {
         ))}
         {!s.entries.length && <div className="card small muted">Trening oznaczony ręcznie w kalendarzu (bez szczegółów).</div>}
       </div>
+      {s.entries.length > 0 && <StravaSendButton id={s.id} sent={!!s.stravaId} />}
       <button className="btn danger block mt24" onClick={() => { if (confirm('Usunąć ten trening ze statystyk?')) { del(s.id); pop(); toast('Usunięto'); } }}><Icon name="trash" size={18} /> Usuń trening</button>
     </div>
   );

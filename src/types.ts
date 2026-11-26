@@ -114,6 +114,8 @@ export interface Session {
   note?: string;
   /** ocena samopoczucia 1-5 */
   feel?: number;
+  /** id aktywności na Stravie (po wysłaniu treningu) */
+  stravaId?: number;
   updatedAt: number;
   deleted?: boolean;
 }
@@ -136,6 +138,8 @@ export interface Profile {
   goal: Goal;
   unitStepKg: number;
   sound: boolean;
+  /** wysyłaj zakończone treningi do Stravy automatycznie */
+  stravaAuto?: boolean;
 }
 
 export interface AppData {

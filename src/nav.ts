@@ -10,6 +10,7 @@ export type View =
   | { name: 'session'; id: string }
   | { name: 'tools' }
   | { name: 'account' }
+  | { name: 'strava' }
   | { name: 'settings' }
   | { name: 'method' }
   | { name: 'install' }

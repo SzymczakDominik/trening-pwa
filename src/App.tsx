@@ -3,7 +3,7 @@ import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { useNav, type Tab, type View } from './nav';
 import { useStore } from './lib/store';
 import { useAuthSync } from './lib/sync';
-import { Icon, Toaster } from './components/ui';
+import { Icon, Toaster, toast } from './components/ui';
 import { Today } from './screens/Today';
 import { PlanScreen } from './screens/Plan';
 import { Library, Onboarding, PlanDetail } from './screens/Library';
@@ -12,6 +12,8 @@ import { RestBar, Workout } from './screens/Workout';
 import { CalendarScreen } from './screens/Calendar';
 import { ExerciseDetail, ProgressScreen, SessionDetail } from './screens/Progress';
 import { Account, Install, Method, MoreScreen, Settings, Tools, type SyncInfo } from './screens/More';
+import { StravaScreen } from './screens/Strava';
+import { finishStravaRedirect } from './lib/strava';
 
 const TABS: { t: Tab; icon: string; l: string }[] = [
   { t: 'today', icon: 'home', l: 'Dziś' },
@@ -31,6 +33,7 @@ function renderView(v: View, sync: SyncInfo) {
     case 'session': return <SessionDetail id={v.id} />;
     case 'tools': return <Tools />;
     case 'account': return <Account sync={sync} />;
+    case 'strava': return <StravaScreen sync={sync} />;
     case 'settings': return <Settings />;
     case 'method': return <Method />;
     case 'install': return <Install />;
@@ -50,6 +53,18 @@ export default function App() {
     if (!onboarded && !hasProgram) push({ name: 'onboarding' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // powrót ze strony zgody Stravy (?code=…)
+  const userId = sync.auth?.user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    finishStravaRedirect().then((r) => {
+      if (!r) return;
+      toast(r.msg);
+      if (r.ok) { useNav.getState().setTab('more'); push({ name: 'strava' }); }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   return (
     <div className="app">

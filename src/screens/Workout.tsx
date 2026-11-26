@@ -8,6 +8,7 @@ import { findPRs, fmtClock, fmtDuration, historyFor, sessionSets, sessionVolume,
 import { Icon, NumInput, Ring, ReorderList, Sheet, bigFmt, kgFmt, toast } from '../components/ui';
 import { ExImg } from '../components/ExImg';
 import { ExercisePicker } from './Editor';
+import { sendSessionToStrava } from '../lib/strava';
 import type { EntryLog, Session } from '../types';
 
 /* ───────── dźwięk (Web Audio – działa w Safari po pierwszym dotknięciu) ───────── */
@@ -398,6 +399,7 @@ export function Workout() {
       {ending && <FinishSheet allDone={!entries.some((e) => e.sets.some((s) => !s.done))} onClose={() => setEnding(false)} onSave={(feel, note) => {
         const fin = finish(feel, note);
         setEnding(false); pop();
+        if (fin && useStore.getState().data.profile.stravaAuto) sendSessionToStrava(fin.id).catch(() => toast('Nie wysłano do Stravy – spróbuj z ekranu treningu'));
         if (fin) { const prs = findPRs(fin, useStore.getState().data.sessions); toast(prs.length ? `Zapisano! Nowe rekordy: ${prs.length} 🏆` : 'Trening zapisany ✓'); push({ name: 'session', id: fin.id }); }
       }} />}
     </div>
