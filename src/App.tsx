@@ -11,11 +11,14 @@ import { WorkoutEditor } from './screens/Editor';
 import { RestBar, Workout } from './screens/Workout';
 import { CalendarScreen } from './screens/Calendar';
 import { ExerciseDetail, ProgressScreen, SessionDetail } from './screens/Progress';
+import { FoodScreen, FoodSetup } from './screens/Food';
+import { FoodAdd, FoodEdit, FoodScan } from './screens/FoodAdd';
 import { Account, Install, Method, MoreScreen, Settings, Tools, type SyncInfo } from './screens/More';
 
 const TABS: { t: Tab; icon: string; l: string }[] = [
   { t: 'today', icon: 'home', l: 'Dziś' },
   { t: 'plan', icon: 'plan', l: 'Plan' },
+  { t: 'food', icon: 'food', l: 'Żywienie' },
   { t: 'calendar', icon: 'cal', l: 'Kalendarz' },
   { t: 'progress', icon: 'chart', l: 'Postępy' },
   { t: 'more', icon: 'more', l: 'Więcej' },
@@ -35,6 +38,10 @@ function renderView(v: View, sync: SyncInfo) {
     case 'method': return <Method />;
     case 'install': return <Install />;
     case 'onboarding': return <Onboarding />;
+    case 'foodAdd': return <FoodAdd date={v.date} meal={v.meal} browse={v.browse} />;
+    case 'foodScan': return <FoodScan date={v.date} meal={v.meal} />;
+    case 'foodEdit': return <FoodEdit id={v.id} prefill={v.prefill} />;
+    case 'foodSetup': return <FoodSetup />;
   }
 }
 
@@ -57,6 +64,7 @@ export default function App() {
         <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
           {tab === 'today' && <Today />}
           {tab === 'plan' && <PlanScreen />}
+          {tab === 'food' && <FoodScreen />}
           {tab === 'calendar' && <CalendarScreen />}
           {tab === 'progress' && <ProgressScreen />}
           {tab === 'more' && <MoreScreen sync={sync} />}
@@ -65,7 +73,7 @@ export default function App() {
 
       {!top && (
         <LayoutGroup>
-          <nav className="tabbar">
+          <nav className="tabbar six">
             {TABS.map((x) => (
               <button key={x.t} className={tab === x.t ? 'on' : ''} onClick={() => setTab(x.t)}>
                 {tab === x.t && <motion.span layoutId="tabbubble" className="bubble" transition={{ type: 'spring', damping: 28, stiffness: 420 }} />}

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import type { Food, MealKey } from './types';
 
-export type Tab = 'today' | 'plan' | 'calendar' | 'progress' | 'more';
+export type Tab = 'today' | 'plan' | 'food' | 'calendar' | 'progress' | 'more';
 export type View =
   | { name: 'library' }
   | { name: 'planDetail'; id: string }
@@ -13,6 +14,10 @@ export type View =
   | { name: 'settings' }
   | { name: 'method' }
   | { name: 'install' }
+  | { name: 'foodAdd'; date: string; meal?: MealKey; browse?: boolean }
+  | { name: 'foodScan'; date: string; meal?: MealKey }
+  | { name: 'foodEdit'; id?: string; prefill?: Partial<Food> }
+  | { name: 'foodSetup' }
   | { name: 'onboarding' };
 
 interface Nav {
