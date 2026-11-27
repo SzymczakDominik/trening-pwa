@@ -46,7 +46,9 @@ export function FoodScreen() {
   const health = useHealth(date).day;
   const est = data.sessions.filter((x) => x.date === date).reduce((a, x) => a + workoutKcal(x, weight ?? 75), 0);
   // energia aktywna z Zdrowia obejmuje już trening, więc ma pierwszeństwo przed szacunkiem
-  const burned = health?.active_kcal ?? est;
+  // bez energii aktywnej (brak zegarka / pusty zapis) liczymy: kroki × ~0,0005 kcal/kg + szacunek treningu
+  const fromSteps = health?.steps ? health.steps * 0.0005 * (weight ?? 75) : 0;
+  const burned = health?.active_kcal ? health.active_kcal : fromSteps + est;
   const left = goals ? goals.kcal - total.kcal : 0;
   const pct = goals ? total.kcal / goals.kcal : 0;
   const over = goals ? left < 0 : false;
