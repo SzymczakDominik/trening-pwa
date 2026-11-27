@@ -33,7 +33,6 @@ export function HealthSetup() {
   useEffect(() => { load(); }, []);
 
   const create = async () => { setBusy(true); const t = await getHealthToken(true); setToken(t.token); setErr(t.error); setBusy(false); };
-  const body = `{\n  "p_token": "${token ?? 'TWÓJ-KLUCZ'}",\n  "p_day": "<Dzień>",\n  "p_steps": <Kroki>,\n  "p_active_kcal": <Kalorie>\n}`;
 
   return (
     <div className="screen">
@@ -55,19 +54,23 @@ export function HealthSetup() {
       )}
 
       <h2 className="mt16" style={{ fontSize: 18 }}>2. Skrót w aplikacji Skróty</h2>
-      <ol className="small stack mt8" style={{ paddingLeft: 18, listStyle: 'decimal', gap: 8 }}>
-        <li>Skróty → <b>+</b> → nowy skrót, nazwij go „FORMA Zdrowie".</li>
-        <li>Dodaj <b>Znajdź próbki zdrowia</b>: typ <b>Kroki</b>, „Data rozpoczęcia jest dzisiaj". Potem <b>Oblicz statystyki</b> (Suma) i <b>Ustaw zmienną</b> o nazwie <b>Kroki</b>.</li>
-        <li>To samo dla typu <b>Energia aktywna</b>. Wynik zaokrąglij akcją <b>Zaokrąglij liczbę</b> i zapisz jako zmienną <b>Kalorie</b>.</li>
-        <li><b>Data bieżąca</b> → <b>Formatuj datę</b> (własny format <b>yyyy-MM-dd</b>) → zmienna <b>Dzień</b>.</li>
-        <li><b>Pobierz zawartość URL</b>: metoda <b>POST</b>, adres i nagłówki jak niżej, treść żądania <b>JSON</b> z pól jak niżej (Dzień jako tekst, Kroki i Kalorie jako liczby).</li>
-        <li>Skróty → <b>Automatyzacja</b> → „Pora dnia" (np. 12:00 i 21:00) → uruchom skrót <b>natychmiast</b>, bez pytania.</li>
+      <ol className="small stack mt8" style={{ paddingLeft: 18, listStyle: 'decimal', gap: 10 }}>
+        <li>Otwórz aplikację <b>Skróty</b> na iPhonie. Zakładka <b>Skróty</b> → przycisk <b>+</b> (u góry). Nazwij skrót <b>FORMA Zdrowie</b>.</li>
+        <li><b>Dodaj działanie</b> → wyszukaj <b>Znajdź próbki zdrowia</b> (Find Health Samples). Dotknij <b>Dodaj filtr</b>: <b>Typ</b> = <b>Kroki</b>; drugi filtr <b>Data rozpoczęcia</b> = <b>jest dzisiaj</b>.</li>
+        <li>Dodaj działanie <b>Oblicz statystyki</b> (Calculate Statistics): wybierz <b>Suma</b>. Dodaj <b>Zaokrąglij liczbę</b> (bez miejsc po przecinku), potem <b>Ustaw zmienną</b> i nazwij ją <b>Kroki</b>.</li>
+        <li>To samo drugi raz: <b>Znajdź próbki zdrowia</b> z typem <b>Energia aktywna</b> i „Data rozpoczęcia jest dzisiaj" → <b>Oblicz statystyki</b> (Suma) → <b>Zaokrąglij liczbę</b> → <b>Ustaw zmienną</b> o nazwie <b>Kalorie</b>.</li>
+        <li>Dodaj <b>Data bieżąca</b> → <b>Formatuj datę</b>: format <b>Własny</b>, wpisz <b>yyyy-MM-dd</b> → <b>Ustaw zmienną</b> o nazwie <b>Dzień</b>.</li>
+        <li>Dodaj <b>Pobierz zawartość URL</b>. Wklej adres z pola poniżej. Rozwiń strzałką <b>Pokaż więcej</b>: <b>Metoda</b> = <b>POST</b>. W <b>Nagłówki</b> dodaj dwa: <b>apikey</b> (wartość z pola poniżej) i <b>Content-Type</b> = <b>application/json</b>. <b>Treść żądania</b> = <b>JSON</b>.</li>
+        <li>W treści JSON dotknij <b>Dodaj nowe pole</b> cztery razy: <b>Tekst</b> o kluczu <b>p_token</b> (wklej swój klucz); <b>Tekst</b> o kluczu <b>p_day</b> (wartość: zmienna <b>Dzień</b>); <b>Liczba</b> o kluczu <b>p_steps</b> (zmienna <b>Kroki</b>); <b>Liczba</b> o kluczu <b>p_active_kcal</b> (zmienna <b>Kalorie</b>). Zmienną wstawisz, dotykając pola wartości i wybierając ją nad klawiaturą.</li>
+        <li>Dotknij ▶ w skrócie i zezwól na dostęp do danych Zdrowia (kroki, energia aktywna) oraz do sieci.</li>
+        <li>Wróć tu i dotknij <b>Odśwież</b>: u góry pojawi się „Ostatnie dane".</li>
+        <li>Automatyzacja: zakładka <b>Automatyzacja</b> → <b>+</b> → <b>Pora dnia</b> (np. 21:00, codziennie) → <b>Uruchom skrót</b> <b>FORMA Zdrowie</b> → ustaw <b>Uruchom natychmiast</b> i wyłącz powiadomienie.</li>
       </ol>
       <div className="stack mt12">
         <Copy label="Adres (URL)" value={ENDPOINT} />
         <Copy label="Nagłówek apikey" value={API_KEY} />
         <Copy label="Nagłówek Content-Type" value="application/json" />
-        <Copy label="Treść JSON" value={body} />
+        
       </div>
 
       <div className="card2 mt16 xs muted">
