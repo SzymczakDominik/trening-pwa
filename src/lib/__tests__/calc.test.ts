@@ -70,3 +70,13 @@ describe('rekordy', () => {
     expect(findPRs(b, [a, b])[0]).toMatchObject({ type: 'kg', value: 65, prev: 60 });
   });
 });
+
+import { workoutKcal } from '../calc';
+describe('workoutKcal', () => {
+  it('szacuje kcal dla treningu i 0 dla pustego', () => {
+    const base: any = { id: 'x', date: '2026-01-01', startedAt: 0, finishedAt: 3600000, entries: [{ sets: Array(16).fill({ done: true, kg: 50, reps: 8 }) }] };
+    const k = workoutKcal(base, 80);
+    expect(k).toBeGreaterThan(250); expect(k).toBeLessThan(600);
+    expect(workoutKcal({ ...base, entries: [{ sets: [{ done: false }] }] }, 80)).toBe(0);
+  });
+});

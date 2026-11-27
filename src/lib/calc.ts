@@ -184,3 +184,15 @@ export function findPRs(session: Session, sessions: Session[]): PR[] {
 
 /** Rekomendowana tygodniowa liczba trudnych serii na partię (zakres z badań nad hipertrofią). */
 export const WEEKLY_SETS = { min: 10, max: 20 };
+
+/** Szacunkowe spalone kcal podczas treningu siłowego (MET ≈ 4,5 × waga × czas pracy; ±30%). */
+export function workoutKcal(s: Session, weightKg = 75) {
+  if (!s.finishedAt || s.deleted) return 0;
+  const sets = s.entries.reduce((a, e) => a + e.sets.filter((x) => x.done).length, 0);
+  if (!sets) return 0;
+  const hours = Math.min(3, Math.max(0.2, (s.finishedAt - s.startedAt) / 3600000));
+  // intensywność: dużo serii na godzinę = wyższy MET (3,5–6)
+  const perHour = sets / hours;
+  const met = Math.max(3.5, Math.min(6, 3.5 + (perHour - 8) * 0.15));
+  return Math.round(met * weightKg * hours);
+}
