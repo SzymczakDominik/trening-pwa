@@ -398,6 +398,7 @@ export function Workout() {
       {ending && <FinishSheet allDone={!entries.some((e) => e.sets.some((s) => !s.done))} onClose={() => setEnding(false)} onSave={(feel, note) => {
         const fin = finish(feel, note);
         setEnding(false); pop();
+        if (!fin) toast('Trening nie został zapisany – brak wykonanych serii');
         if (fin) { const prs = findPRs(fin, useStore.getState().data.sessions); toast(prs.length ? `Zapisano! Nowe rekordy: ${prs.length} 🏆` : 'Trening zapisany ✓'); push({ name: 'session', id: fin.id }); }
       }} />}
     </div>
@@ -434,7 +435,7 @@ function FinishSheet({ onClose, onSave, allDone }: { onClose: () => void; onSave
       <div className="small muted mt16 center">Jak się czułeś?</div>
       <div className="grid3 mt8" style={{ gridTemplateColumns: 'repeat(5, minmax(0,1fr))' }}>{['😫', '😕', '😐', '🙂', '💪'].map((e, i) => <button key={i} className={`chip ${feel === i + 1 ? 'on' : ''}`} style={{ fontSize: 22, height: 48, borderRadius: 14 }} onClick={() => setFeel(i + 1)}>{e}</button>)}</div>
       <textarea className="input left mt12" placeholder="Notatka (opcjonalnie)" value={note} onChange={(e) => setNote(e.target.value)} />
-      <button className="btn lg primary block mt16" onClick={() => onSave(feel, note || undefined)}>Zapisz trening</button>
+      <button className="btn lg primary block mt16" onClick={() => onSave(feel, note || undefined)}>{sessionSets(active) > 0 ? 'Zapisz trening' : 'Zamknij bez zapisu'}</button>
       <button className="btn ghost block mt8" onClick={onClose}>Wróć do treningu</button>
     </Sheet>
   );

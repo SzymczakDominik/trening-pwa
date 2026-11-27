@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { useNav, type Tab, type View } from './nav';
 import { useStore } from './lib/store';
@@ -52,6 +52,20 @@ export default function App() {
   const hasProgram = useStore((s) => !!s.data.program);
   const hasRest = useStore((s) => !!s.rest);
   const top = stack[stack.length - 1];
+  const [visited, setVisited] = useState<Set<Tab>>(() => new Set([tab]));
+  const scrolls = useRef<Partial<Record<Tab, number>>>({});
+  const lastTab = useRef<Tab>(tab);
+  const curY = useRef(0);
+  useLayoutEffect(() => {
+    if (lastTab.current !== tab) { scrolls.current[lastTab.current] = curY.current; lastTab.current = tab; }
+    setVisited((v) => (v.has(tab) ? v : new Set(v).add(tab)));
+    window.scrollTo(0, scrolls.current[tab] ?? 0);
+  }, [tab]);
+  useEffect(() => {
+    const on = () => { if (!useNav.getState().stack.length) curY.current = window.scrollY; };
+    window.addEventListener('scroll', on, { passive: true });
+    return () => window.removeEventListener('scroll', on);
+  }, []);
 
   useEffect(() => {
     if (!onboarded && !hasProgram) push({ name: 'onboarding' });
@@ -60,16 +74,17 @@ export default function App() {
 
   return (
     <div className="app">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
-          {tab === 'today' && <Today />}
-          {tab === 'plan' && <PlanScreen />}
-          {tab === 'food' && <FoodScreen />}
-          {tab === 'calendar' && <CalendarScreen />}
-          {tab === 'progress' && <ProgressScreen />}
-          {tab === 'more' && <MoreScreen sync={sync} />}
-        </motion.div>
-      </AnimatePresence>
+      {/* zakładki zostają zamontowane po pierwszym wejściu: bez migotania, bez ponownego ładowania grafik */}
+      {TABS.filter((x) => visited.has(x.t)).map((x) => (
+        <div key={x.t} className={`tabpane ${tab === x.t ? 'on' : ''}`} style={{ display: tab === x.t ? 'block' : 'none' }}>
+          {x.t === 'today' && <Today />}
+          {x.t === 'plan' && <PlanScreen />}
+          {x.t === 'food' && <FoodScreen />}
+          {x.t === 'calendar' && <CalendarScreen />}
+          {x.t === 'progress' && <ProgressScreen />}
+          {x.t === 'more' && <MoreScreen sync={sync} />}
+        </div>
+      ))}
 
       {!top && (
         <LayoutGroup>

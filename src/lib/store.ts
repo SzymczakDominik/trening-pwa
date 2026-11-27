@@ -119,6 +119,8 @@ export const useStore = create<State>()(
       updateActive: (fn) => set((s) => { if (!s.active) return {}; const a = clone(s.active); fn(a); a.updatedAt = Date.now(); return { active: a }; }),
       finishActive: (feel, note) => {
         const a = get().active; if (!a) return;
+        // trening bez żadnej wykonanej serii nie jest zapisywany (nie liczy się jako ukończony)
+        if (!a.entries.some((e) => e.sets.some((x) => x.done))) { set({ active: undefined, rest: undefined }); return; }
         const fin: Session = { ...clone(a), finishedAt: Date.now(), feel, note, updatedAt: Date.now() };
         fin.entries = fin.entries.filter((e) => e.sets.some((x) => x.done));
         set((s) => { const d = clone(s.data); d.sessions.push(fin); touch(d); return { data: d, active: undefined, rest: undefined }; });

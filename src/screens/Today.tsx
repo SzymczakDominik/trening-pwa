@@ -34,7 +34,9 @@ export function Today() {
 
   const pos = p ? programPosition(p) : undefined;
   const nextIdx = p ? nextWorkoutIndex(p, data.sessions) : 0;
-  const next = pos?.block.workouts[nextIdx];
+  const [pickId, setPickId] = useState<string | null>(null);
+  const suggested = pos?.block.workouts[nextIdx];
+  const next = pos?.block.workouts.find((w) => w.id === pickId) ?? suggested;
   const isTrainingDay = !!p?.trainingDays.includes(weekday(today));
   const doneToday = sessions.some((s) => s.date === today);
 
@@ -73,6 +75,18 @@ export function Today() {
             {next.exercises.slice(0, 4).map((e) => <ExImg key={e.uid} id={e.exId} size="fill" />)}
           </div>
           <div style={{ padding: 16 }}>
+            {pos.block.workouts.length > 1 && (
+              <div style={{ marginBottom: 14 }}>
+                <div className="xs muted bold" style={{ letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 8 }}>Który trening robisz?</div>
+                <div className="chips">
+                  {pos.block.workouts.map((w) => (
+                    <button key={w.id} className={`chip ${w.id === next.id ? 'on' : ''}`} onClick={() => setPickId(w.id)}>
+                      {w.name.replace(/^Trening /, '')}{w.id === suggested?.id ? ' · następny' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="between">
               <span className="tag accent">{isTrainingDay && !doneToday ? 'Dziś' : `Następny: ${nextLabel}`}</span>
               {pos.deload ? <span className="tag violet">odciążenie</span> : <span className="tag">RIR {Math.max(0, 2 + pos.targetRirShift)}</span>}
