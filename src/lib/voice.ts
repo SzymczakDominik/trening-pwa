@@ -39,6 +39,23 @@ const STOP = new Set(['i', 'z', 'ze', 'na', 'do', 'oraz', 'plus', 'a', 'jeszcze'
 /** Prosta odmiana → mianownik: usuwa końcówki, żeby „jajka/jajko/jajek” trafiały w to samo. */
 const stem = (t: string) => (t.length > 5 ? t.slice(0, -2) : t.length > 3 ? t.slice(0, -1) : t);
 
+/** Z kilku trafień wybiera to, co człowiek najpewniej miał na myśli: prosty produkt, w stanie „do zjedzenia". */
+function pickBest(list: Food[], said: Set<string>): Food {
+  const saidRaw = [...said].some((t) => /^(surow|such|sucha|suche|suchy)/.test(t));
+  const score = (f: Food, i: number) => {
+    const n = norm(f.name);
+    let sc = i * 0.05;
+    if (f.cat === 'Dania gotowe' || f.cat === 'Słodycze i przekąski') sc += 3;
+    if (/ na | z | ze | w /.test(` ${n} `)) sc += 2;
+    if (/gotowan|pieczon|smazon/.test(n) && !saidRaw) sc -= 1;
+    if (/surow|such/.test(n) && !saidRaw) sc += 0.5;
+    if (f.custom) sc -= 2;
+    sc += n.split(' ').length * 0.1;
+    return sc;
+  };
+  return list.map((f, i) => [score(f, i), f] as const).sort((a, b) => a[0] - b[0])[0][1];
+}
+
 export function parseMeal(text: string, foods: Food[]): VoiceItem[] {
   const parts = text.split(/[,;\n]+|\s+(?:i|oraz|plus|potem|jeszcze)\s+/i).map((s) => s.trim()).filter(Boolean);
   const out: VoiceItem[] = [];
@@ -50,7 +67,8 @@ export function parseMeal(text: string, foods: Food[]): VoiceItem[] {
     // próbujemy pełnych słów, potem rdzeni, potem pojedynczych słów
     const tries = [words.join(' '), words.map(stem).join(' '), ...words.map(stem)];
     let food: Food | undefined;
-    for (const q of tries) { const r = searchFoods(foods, q, 1); if (r[0]) { food = r[0]; break; } }
+    const said = new Set(words);
+    for (const q of tries) { const r = searchFoods(foods, q, 25); if (r.length) { food = pickBest(r, said); break; } }
     const portion = food?.portion?.g ?? 100;
     let grams: number;
     if (unit === undefined) grams = amount > 20 ? amount : amount * (food?.portion?.g ?? 100); // „200 ryżu” = gramy, „2 jajka” = sztuki
