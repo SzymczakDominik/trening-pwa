@@ -8,6 +8,7 @@ import { ACTIVITY, MEALS, MODES, computeGoals, dayEntries, dayWater, entryMacros
 import { useHealth } from '../lib/health';
 import { Icon, NumInput, Ring, Seg, Sheet, Stepper, TopBar, kgFmt, toast } from '../components/ui';
 import { EntrySheet, SaveMealSheet } from './FoodAdd';
+import { VoiceSheet } from './FoodVoice';
 import type { Activity, DietMode, FoodEntry, MealKey } from '../types';
 
 const lastWeight = (body: { date: string; weight?: number; deleted?: boolean }[], upTo: string) =>
@@ -31,6 +32,7 @@ export function FoodScreen() {
   const [date, setDate] = useState(todayStr());
   const [edit, setEdit] = useState<FoodEntry | null>(null);
   const [saveFor, setSaveFor] = useState<MealKey | null>(null);
+  const [voiceFor, setVoiceFor] = useState<MealKey | null>(null);
 
   const entries = useMemo(() => dayEntries(data, date), [data, date]);
   const weight = lastWeight(data.body, date);
@@ -164,6 +166,7 @@ export function FoodScreen() {
               <div className="meal-add">
                 <button className="btn sm primary" onClick={() => push({ name: 'foodAdd', date, meal: m.k })}><Icon name="plus" size={18} /> Dodaj</button>
                 <button className="btn sm" onClick={() => push({ name: 'foodScan', date, meal: m.k })}><Icon name="scan" size={18} /> Skanuj</button>
+                <button className="btn sm" onClick={() => setVoiceFor(m.k)}><Icon name="mic" size={18} /> Dyktuj</button>
                 {es.length > 0
                   ? <button className="btn sm ghost" style={{ flex: 'none', width: 46, padding: 0 }} aria-label="Zapisz jako posiłek" onClick={() => setSaveFor(m.k)}><Icon name="bookmark" size={18} /></button>
                   : prev.length > 0 && <button className="btn sm ghost" style={{ flex: 'none', padding: '0 12px' }} onClick={() => { copyEntries(prev, date); toast('Skopiowano z wczoraj'); }}><Icon name="copy" size={16} /> Wczoraj</button>}
@@ -188,6 +191,7 @@ export function FoodScreen() {
         <Stepper value={todayWeight ?? weight ?? 70} step={0.1} min={30} max={300} suffix=" kg" onChange={(n) => addBody({ date, weight: n })} />
       </div>
 
+      <VoiceSheet open={!!voiceFor} date={date} meal={voiceFor ?? 'sniadanie'} onClose={() => setVoiceFor(null)} />
       <EntrySheet entry={edit} onClose={() => setEdit(null)} />
       <SaveMealSheet meal={saveFor} entries={entries.filter((e) => e.meal === saveFor)} onClose={() => setSaveFor(null)} />
     </div>
