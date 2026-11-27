@@ -5,6 +5,7 @@ import { useStore } from '../lib/store';
 import { useNav } from '../nav';
 import { addDays, DAY_SHORT, fromStr, mondayOf, MONTHS_GEN, todayStr, DAY_LONG, weekday, workoutKcal } from '../lib/calc';
 import { ACTIVITY, MEALS, MODES, computeGoals, dayEntries, dayWater, entryMacros, r0, sumEntries } from '../lib/nutrition';
+import { useHealth } from '../lib/health';
 import { Icon, NumInput, Ring, Seg, Sheet, Stepper, TopBar, kgFmt, toast } from '../components/ui';
 import { EntrySheet, SaveMealSheet } from './FoodAdd';
 import type { Activity, DietMode, FoodEntry, MealKey } from '../types';
@@ -42,7 +43,10 @@ export function FoodScreen() {
   const week = useMemo(() => { const m = mondayOf(date); return Array.from({ length: 7 }, (_, i) => addDays(m, i)); }, [date]);
   const hasData = (d: string) => (data.food?.entries ?? []).some((e) => e.date === d && !e.deleted);
 
-  const burned = data.sessions.filter((x) => x.date === date).reduce((a, x) => a + workoutKcal(x, weight ?? 75), 0);
+  const health = useHealth(date).day;
+  const est = data.sessions.filter((x) => x.date === date).reduce((a, x) => a + workoutKcal(x, weight ?? 75), 0);
+  // energia aktywna z Zdrowia obejmuje już trening, więc ma pierwszeństwo przed szacunkiem
+  const burned = health?.active_kcal ?? est;
   const left = goals ? goals.kcal - total.kcal : 0;
   const pct = goals ? total.kcal / goals.kcal : 0;
   const over = goals ? left < 0 : false;
@@ -103,7 +107,7 @@ export function FoodScreen() {
           <div className="xs muted" style={{ marginTop: 2 }}>spalone</div>
         </Ring>
         </div>
-        <div className="xs muted center" style={{ marginTop: -4 }}>Spalone: szacunek z treningu w aplikacji{burned ? '' : ' (brak treningu tego dnia)'}</div>
+        <div className="xs muted center" style={{ marginTop: -4 }}>{health?.active_kcal != null ? `Spalone ze Zdrowia${health.steps != null ? ` · ${health.steps.toLocaleString('pl-PL')} kroków` : ''}` : `Spalone: szacunek z treningu w aplikacji${est ? '' : ' (brak treningu tego dnia)'}`}</div>
         <div className="fsub">
           <div><b className="num">{r0(total.kcal)}</b><span>Zjedzone</span></div>
           <div><b className="num">{goals ? goals.kcal : '—'}</b><span>Cel</span></div>

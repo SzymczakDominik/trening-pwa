@@ -44,6 +44,10 @@ alter table public.user_data enable row level security;
 -- polityki: każdy użytkownik widzi i zmienia tylko swój wiersz (auth.uid() = user_id)
 ```
 
+### Kroki i spalone kalorie (Skrót iOS)
+
+Plik `supabase/health.sql` tworzy tabele `health_tokens` i `health_daily` oraz funkcję `ingest_health`. Po jego uruchomieniu w SQL Editor, w aplikacji: Więcej → „Zdrowie i kroki" – klucz i instrukcja konfiguracji Skrótu.
+
 ## Źródła grafik i czcionek
 - Zdjęcia ćwiczeń: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (Unlicense / domena publiczna), przekonwertowane do WebP (`public/img/ex`, patrz `CREDITS.txt`).
 - Czcionki Inter i Space Grotesk (SIL OFL), hostowane lokalnie.

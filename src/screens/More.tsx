@@ -26,6 +26,7 @@ export function MoreScreen({ sync }: { sync: SyncInfo }) {
       <div className="mt16">
         <Item icon="user" t="Konto i synchronizacja" d={sync.auth?.user ? `${sync.auth.user.email} · ${syncLabel[sync.state]}` : 'Zaloguj się, by mieć kopię w chmurze'} onClick={() => push({ name: 'account' })} />
         <Item icon="food" t="Biblioteka produktów" d="Kalorie, białko, węgle i tłuszcz na 100 g i na porcję" onClick={() => push({ name: 'foodAdd', date: todayStr(), browse: true })} />
+        <Item icon="flame" t="Zdrowie i kroki" d="Kroki i spalone kalorie z iPhone'a przez Skrót" onClick={() => push({ name: 'health' })} />
         <Item icon="tool" t="Kalkulatory" d="1RM, BMI, FFMI, tkanka tłuszczowa, kalorie, białko, woda" onClick={() => push({ name: 'tools' })} />
         <Item icon="info" t="Jak działa progresja" d="RIR, podwójna progresja, bloki i odciążenie" onClick={() => push({ name: 'method' })} />
         <Item icon="dumbbell" t="Biblioteka planów" d="Zmień lub podejrzyj plany" onClick={() => push({ name: 'library' })} />

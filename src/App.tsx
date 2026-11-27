@@ -12,6 +12,7 @@ import { RestBar, Workout } from './screens/Workout';
 import { CalendarScreen } from './screens/Calendar';
 import { ExerciseDetail, ProgressScreen, SessionDetail } from './screens/Progress';
 import { FoodScreen, FoodSetup } from './screens/Food';
+import { HealthSetup } from './screens/Health';
 import { FoodAdd, FoodEdit, FoodScan } from './screens/FoodAdd';
 import { Account, Install, Method, MoreScreen, Settings, Tools, type SyncInfo } from './screens/More';
 
@@ -42,6 +43,7 @@ function renderView(v: View, sync: SyncInfo) {
     case 'foodScan': return <FoodScan date={v.date} meal={v.meal} />;
     case 'foodEdit': return <FoodEdit id={v.id} prefill={v.prefill} />;
     case 'foodSetup': return <FoodSetup />;
+    case 'health': return <HealthSetup />;
   }
 }
 

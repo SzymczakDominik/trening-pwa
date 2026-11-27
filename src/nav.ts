@@ -18,6 +18,7 @@ export type View =
   | { name: 'foodScan'; date: string; meal?: MealKey }
   | { name: 'foodEdit'; id?: string; prefill?: Partial<Food> }
   | { name: 'foodSetup' }
+  | { name: 'health' }
   | { name: 'onboarding' };
 
 interface Nav {
