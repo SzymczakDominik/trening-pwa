@@ -71,7 +71,7 @@ export function HealthSetup() {
       </div>
 
       <div className="card2 mt16 xs muted">
-        Dane z Garmina trafią do Zdrowia tylko wtedy, gdy aplikacja zegarka zapisuje je w apce Zdrowie. Sprawdzisz to w Zdrowie → Udostępnianie → Aplikacje. Jeśli jej tam nie ma, Skrót wyśle kroki z iPhone'a (lub Apple Watch). Wartość „energia aktywna" z Zdrowia zastępuje szacunek z treningów w aplikacji, żeby ich nie liczyć podwójnie.
+        Dane z Garmina trafią do Zdrowia tylko wtedy, gdy aplikacja zegarka zapisuje je w apce Zdrowie. Sprawdzisz to w Zdrowie → Udostępnianie → Aplikacje. Jeśli jej tam nie ma, Skrót wyśle kroki z iPhone'a (lub Apple Watch).
       </div>
       <button className="btn ghost block mt12" onClick={load}>Odśwież</button>
     </div>

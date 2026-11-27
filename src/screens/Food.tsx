@@ -107,7 +107,8 @@ export function FoodScreen() {
           <div className="xs muted" style={{ marginTop: 2 }}>spalone</div>
         </Ring>
         </div>
-        <div className="xs muted center" style={{ marginTop: -4 }}>{health?.active_kcal != null ? `Spalone ze Zdrowia${health.steps != null ? ` · ${health.steps.toLocaleString('pl-PL')} kroków` : ''}` : `Spalone: szacunek z treningu w aplikacji${est ? '' : ' (brak treningu tego dnia)'}`}</div>
+        {health?.steps != null && <div className="xs muted center" style={{ marginTop: -4 }}>{health.steps.toLocaleString('pl-PL')} kroków</div>}
+
         <div className="fsub">
           <div><b className="num">{r0(total.kcal)}</b><span>Zjedzone</span></div>
           <div><b className="num">{goals ? goals.kcal : '—'}</b><span>Cel</span></div>
